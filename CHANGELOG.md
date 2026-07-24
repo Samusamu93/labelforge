@@ -1,0 +1,26 @@
+# Changelog
+
+Tutte le modifiche rilevanti a LabelForge. / All notable changes to LabelForge.
+
+## v1.12.0
+- 🩺 **Diagnostica stampante**: verifica raggiungibilità di rete, stato reale della stampante
+  (errori tipo carta finita / testina aperta / pausa via `~HQES`), stato e coda della stampante
+  Windows, con suggerimenti mirati (es. IP cambiato).
+- 🧭 Mappatura colonne CSV → campi del modello (import robusto con qualsiasi intestazione).
+- ⬇ Generazione di un CSV di esempio con le colonne giuste per il modello selezionato.
+- 🎛️ Pannello **Impostazioni** unificato: connessione, stampante, tema, copie predefinite,
+  intensità/velocità di stampa, griglia editor, linguaggio predefinito, ripristino, apri cartella.
+- 🧰 Barra editor ridisegnata (gruppi, titolo del modello, azioni rapide).
+- 🛡️ I codici a barre/QR con dato vuoto non vengono più inviati (evita blocchi della stampante).
+
+## Funzionalità principali (storico)
+- 🖨️ Stampa via rete (porta 9100), stampante Windows per nome, o USB (Linux/Mac).
+- 🌐 Linguaggi: **ZPL** (testato) + **TSPL/EPL/CPCL/EZPL** (sperimentali).
+- 🔠 Codici: testo, Code128, Code39, Code93, EAN‑13, QR Code, DataMatrix; linee e riquadri.
+- 🎨 Editor visuale con anteprima live (barcode e QR reali), trascinamento, ridimensionamento, snap.
+- 🧩 Campi dinamici `{{campo}}`: testo, menu a tendina, liste con quantità (una etichetta per voce).
+- ⚡ Stampa automatica dopo scansione; import CSV per stampe in blocco.
+- 🕘 Storico con ristampa, ricerca modelli, tema chiaro/scuro, scorciatoie, undo/redo.
+- 📦 Pacchettizzazione `.exe` e build automatica Windows/Linux/macOS via GitHub Actions.
+
+Nota: solo ZPL è testato su hardware reale; gli altri linguaggi sono sperimentali.
