@@ -1,74 +1,92 @@
-# LabelForge
+<div align="center">
 
-*[🇬🇧 Read in English](README.md)*
+# 🏷️ LabelForge
 
-Applicazione desktop (Electron) e strumento da riga di comando per stampare etichette **ZPL** su
-stampanti Zebra (testata su **ZD410**) via **rete (IP)** o **USB/Windows**. Le etichette sono
-definite tramite **template dinamici** in JSON, con **editor visuale**, **anteprima live**,
-trascinamento e ridimensionamento degli elementi, campi a lista (menu a tendina / quantità) e
-stampa a raffica con lettore di codici a barre.
+**Stampa etichette ZPL su stampanti Zebra — app desktop + CLI, con editor visuale dei template.**
 
-Nessuna dipendenza a pagamento. La CLI funziona con Node puro; la GUI usa Electron.
+Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via rete o USB.
 
-## Caratteristiche
+[![Licenza: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Piattaforma](https://img.shields.io/badge/piattaforma-Windows%20%7C%20Linux%20%7C%20macOS-blue)](#-requisiti)
+[![Electron](https://img.shields.io/badge/Electron-31-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Build](https://github.com/Samusamu93/labelforge/actions/workflows/build.yml/badge.svg)](https://github.com/Samusamu93/labelforge/actions/workflows/build.yml)
 
-- Stampa via rete (porta raw 9100), stampante Windows per nome (API Win32, funziona con qualsiasi
-  porta, anche quelle virtuali di Zebra Setup Utilities), o device USB su Linux/Mac.
-- Template JSON: testo, codice a barre Code128, QR code, linee e riquadri; misure in mm; 203/300 dpi.
-- Editor visuale con anteprima live: seleziona, trascina, ridimensiona, snap alla griglia.
-- Campi dinamici `{{campo}}`: testo, menu a tendina, oppure liste con quantità (una etichetta per voce).
-- Stampa automatica dopo la scansione (il lettore si comporta come tastiera).
-- Impostazioni e template personalizzati salvati nella cartella dati utente.
-- Pacchettizzazione in `.exe` Windows; collegamento sul Desktop creato automaticamente al primo avvio.
+[🇬🇧 English](README.md) · **🇮🇹 Italiano**
 
-## Requisiti
+</div>
 
-- [Node.js](https://nodejs.org) 18+ (consigliato 20+).
-- Windows per la stampa USB tramite nome stampante; rete (IP) funziona ovunque.
+---
 
-## Avvio rapido (GUI)
+> **LabelForge** trasforma template JSON dinamici in ZPL e li invia direttamente a una stampante
+> Zebra (testata su **ZD410**). Funziona da un'interfaccia desktop pulita *oppure* da riga di
+> comando, con editor dei template drag‑and‑drop e anteprima live. Nessuna dipendenza a pagamento.
+
+<!-- Aggiungi qui uno screenshot per rendere la pagina più bella, es.:
+<div align="center"><img src="docs/screenshot.png" width="820" alt="Editor LabelForge"></div>
+-->
+
+## ✨ Caratteristiche
+
+| | |
+|---|---|
+| 🖨️ **Connessioni multiple** | Rete (porta raw 9100), stampante Windows per nome (API Win32 — funziona con qualsiasi porta, anche quelle virtuali di Zebra Setup Utilities), o device USB su Linux/Mac. |
+| 🧩 **Template dinamici** | Template JSON con testo, codice a barre Code128, QR code, linee e riquadri. Misure in mm; 203/300 dpi. |
+| 🎨 **Editor visuale** | Anteprima live; seleziona, trascina, ridimensiona e aggancia gli elementi a una griglia. Nessuna modifica manuale del JSON. |
+| ⌨️ **Campi intelligenti** | Campi `{{campo}}` come testo, menu a tendina o liste con quantità per voce (una etichetta per unità). |
+| ⚡ **Scansiona e stampa** | Stampa automatica dopo la scansione (il lettore si comporta come tastiera) — ideale per raffiche. |
+| 💾 **Ricorda tutto** | Stampante, ultimo template e preferenze salvati tra un avvio e l'altro. |
+| 📦 **Distribuisci come app** | Pacchettizzazione in `.exe` Windows; collegamento sul Desktop creato automaticamente al primo avvio. |
+
+## 📋 Requisiti
+
+- [Node.js](https://nodejs.org) 18+ (consigliato 20+)
+- Windows per la stampa USB tramite nome stampante — la rete (IP) funziona ovunque
+
+## 🚀 Avvio rapido (GUI)
 
 ```bash
 npm install
 npm start
 ```
 
-## Riga di comando (CLI)
+## 🖥️ Riga di comando (CLI)
 
 ```bash
-# elenco template
-node cli.js list-templates
-# elenco stampanti Windows
-node cli.js list-printers
+node cli.js list-templates                 # elenco template
+node cli.js list-printers                  # elenco stampanti Windows
 # stampa via rete
 node cli.js print --template product-51x25 --ip 192.168.1.50 --set title="Prodotto" --set code=12345
 # stampa per nome stampante Windows (consigliato)
 node cli.js print --template product-51x25 --printer "Zebra" --set title="Prodotto" --set code=12345
-# test / calibrazione
-node cli.js test --printer "Zebra"
-node cli.js calibrate --printer "Zebra"
+node cli.js test --printer "Zebra"         # etichetta di prova
+node cli.js calibrate --printer "Zebra"    # calibrazione automatica sensori
 ```
 
-## Creare l'eseguibile Windows
+## 📦 Creare l'eseguibile Windows
 
-Metodo consigliato (nessun problema di code-signing):
+Metodo consigliato (nessun problema di code‑signing):
 
 ```bash
 npm install
 npm run pack:exe
 ```
 
-Risultato in `dist-app/LabelForge-win32-x64/`, eseguibile avviabile a doppio clic.
+Risultato in `dist-app/LabelForge-win32-x64/` — eseguibile avviabile a doppio clic.
+In alternativa un installer con `npm run dist` (electron‑builder; su Windows può richiedere la Modalità sviluppatore).
 
-In alternativa, installer con electron-builder (`npm run dist`) — su Windows può richiedere la
-Modalità sviluppatore attiva per i link simbolici.
+### 🤖 Build automatica su GitHub
 
-### Build automatica su GitHub
+Il workflow [`build.yml`](.github/workflows/build.yml) compila l'exe su un runner Windows.
+Pubblica un tag `vX.Y.Z` per generare una **Release** con lo zip allegato, oppure lancialo dalla
+scheda **Actions**:
 
-Il workflow `.github/workflows/build.yml` compila l'exe su un runner Windows: crea e pubblica un tag
-`vX.Y.Z` per generare una Release con lo zip allegato, oppure lancialo dalla scheda **Actions**.
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
 
-## Template
+## 🧩 Template
 
 I template stanno in `templates/*.json`. Esempio minimo:
 
@@ -89,30 +107,33 @@ I template stanno in `templates/*.json`. Esempio minimo:
 }
 ```
 
-Tipi di elemento: `text`, `barcode128`, `qrcode`, `box`, `line`. I `field_meta` di tipo `select`
-diventano menu a tendina; `multi-qty` diventa una lista con quantità per voce (una etichetta per
-quantità). I template di esempio inclusi coprono prodotto, spedizione, QR e `product-variants`
-(menu a tendina + lista con quantità).
+**Tipi di elemento:** `text`, `barcode128`, `qrcode`, `box`, `line`.
+**Tipi di campo** (`field_meta`): `select` → menu a tendina, `multi-qty` → lista con quantità per
+voce (una etichetta per unità). Esempi inclusi: prodotto, spedizione, QR e `product-variants`
+(tendina + lista quantità).
 
-## Struttura
+## 🗂️ Struttura del progetto
 
 ```
-cli.js                       riga di comando
-gui/                         app Electron (main, preload, index.html, renderer, preview)
-lib/zpl.js                   generatore ZPL
-lib/print.js                 invio rete / stampante Windows / USB
-scripts/send-raw-printer.ps1 invio RAW a stampante Windows per nome
-templates/                   template di esempio (modificabili)
-.github/workflows/build.yml  build automatica dell'exe
+cli.js                        riga di comando
+gui/                          app Electron (main, preload, index.html, renderer, preview)
+lib/zpl.js                    generatore ZPL
+lib/print.js                  invio rete / stampante Windows / USB
+scripts/send-raw-printer.ps1  invio RAW a stampante Windows per nome
+templates/                    template di esempio (modificabili)
+.github/workflows/build.yml   build automatica dell'exe
 ```
 
-## Note tecniche
+## 🔧 Note tecniche
 
-Lo ZPL viene inviato "raw": su Windows tramite le API `OpenPrinter`/`WritePrinter` (così funziona
-con qualsiasi tipo di porta, anche quelle virtuali di Zebra Setup Utilities); via rete su porta 9100;
-su Linux/Mac scrivendo sul device (es. `/dev/usb/lp0`). Se le etichette non si posizionano bene sulla
-barra di strappo, esegui `calibrate` e regola `tear_off` nel template.
+Lo ZPL viene inviato **raw**: su Windows tramite `OpenPrinter`/`WritePrinter` (qualsiasi tipo di
+porta, anche virtuali); via rete su porta 9100; su Linux/Mac scrivendo sul device (es.
+`/dev/usb/lp0`). Se le etichette non si fermano sulla barra di strappo, esegui `calibrate` e regola
+`tear_off` nel template.
 
-## Licenza
+> `npm audit` può segnalare avvisi dagli strumenti di sviluppo (Electron/builder). Non finiscono
+> nell'app e si possono ignorare — **non** lanciare `npm audit fix --force` (rompe il build).
 
-MIT — vedi [LICENSE](LICENSE).
+## 📄 Licenza
+
+Rilasciato sotto [Licenza MIT](LICENSE).
