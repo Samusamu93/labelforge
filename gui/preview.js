@@ -36,35 +36,28 @@
     return bars;
   }
 
-  // QR stilizzato: griglia a scacchi deterministica.
-  function qrBox(value, x, y, size) {
-    const n = 12;
-    const cell = size / n;
-    const seedStr = value || 'QR';
-    let seed = 0;
-    for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) % 100000;
-    const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-    let cells = `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="#fff" stroke="#111" stroke-width="0.15"/>`;
-    const finder = (fx, fy) => {
-      cells += `<rect x="${fx}" y="${fy}" width="${cell * 3}" height="${cell * 3}" fill="#111"/>`;
-      cells += `<rect x="${fx + cell}" y="${fy + cell}" width="${cell}" height="${cell}" fill="#fff"/>`;
-    };
-    for (let r = 0; r < n; r++) {
-      for (let c = 0; c < n; c++) {
-        const inFinder = (r < 3 && c < 3) || (r < 3 && c > n - 4) || (r > n - 4 && c < 3);
-        if (inFinder) continue;
-        if (rnd() > 0.5) {
-          cells += `<rect x="${(x + c * cell).toFixed(2)}" y="${(y + r * cell).toFixed(2)}" width="${cell.toFixed(2)}" height="${cell.toFixed(2)}" fill="#111"/>`;
+  // QR reale se la matrice è disponibile in cache; altrimenti box segnaposto.
+  function qrBox(value, x, y, size, qrCache) {
+    const m = qrCache && qrCache[value];
+    if (m && m.size) {
+      const n = m.size;
+      const cell = size / n;
+      let cells = `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="#fff"/>`;
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          if (m.data[r * n + c]) {
+            cells += `<rect x="${(x + c * cell).toFixed(3)}" y="${(y + r * cell).toFixed(3)}" width="${(cell + 0.02).toFixed(3)}" height="${(cell + 0.02).toFixed(3)}" fill="#111"/>`;
+          }
         }
       }
+      return cells;
     }
-    finder(x, y);
-    finder(x + cell * (n - 3), y);
-    finder(x, y + cell * (n - 3));
-    return cells;
+    // segnaposto finché la matrice non è pronta
+    return `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="#fff" stroke="#111" stroke-width="0.2"/>` +
+      `<text x="${(x + size / 2).toFixed(2)}" y="${(y + size / 2).toFixed(2)}" font-size="${(size / 6).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8">QR</text>`;
   }
 
-  function renderElement(el, dpi, data) {
+  function renderElement(el, dpi, data, qrCache) {
     const x = Number(el.x_mm) || 0;
     const y = Number(el.y_mm) || 0;
     switch (el.type) {
@@ -76,10 +69,17 @@
         return `<text x="${x}" y="${y}" font-size="${fontSize.toFixed(2)}" font-family="Arial, sans-serif" dominant-baseline="text-before-edge" fill="#111">${esc(text) || ' '}</text>`;
       }
       case 'barcode128': {
-        const text = fillPlaceholders(el.text, data);
+        const text = fillPlaceholders(el.text, data) || '000';
         const h = el.bar_height_mm || (el.bar_height_dots ? (el.bar_height_dots / dpi) * 25.4 : 10);
-        const w = Math.max(20, (text.length || 6) * 2.2);
-        let out = barcodeBars(text, x, y, w, h);
+        const moduleMm = (el.module_width || 2) / (dpi / 25.4); // modulo reale in mm
+        let out, w;
+        if (typeof window !== 'undefined' && window.Barcode) {
+          const r = window.Barcode.code128SVG(text, x, y, h, moduleMm);
+          out = r.svg; w = r.width;
+        } else {
+          w = Math.max(20, (text.length || 6) * 2.2);
+          out = barcodeBars(text, x, y, w, h);
+        }
         if (el.show_text !== false) {
           out += `<text x="${(x + w / 2).toFixed(2)}" y="${(y + h + 3).toFixed(2)}" font-size="2.6" font-family="monospace" text-anchor="middle" fill="#111">${esc(text)}</text>`;
         }
@@ -88,7 +88,7 @@
       case 'qrcode': {
         const text = fillPlaceholders(el.text, data);
         const size = (el.magnification || 4) * 5; // ~mm indicativi
-        return qrBox(text, x, y, size);
+        return qrBox(text, x, y, size, qrCache);
       }
       case 'line':
       case 'box': {
@@ -102,8 +102,8 @@
     }
   }
 
-  // Ritorna una stringa SVG. enabledIndices opzionale (array).
-  function renderPreviewSVG(template, data, enabledIndices) {
+  // Ritorna una stringa SVG. enabledIndices opzionale (array). qrCache opzionale.
+  function renderPreviewSVG(template, data, enabledIndices, qrCache) {
     const dpi = template.dpi || 203;
     const W = Number(template.width_mm) || 50;
     const H = Number(template.height_mm) || 25;
@@ -111,7 +111,7 @@
     let body = '';
     (template.elements || []).forEach((el, i) => {
       const on = enabledSet ? enabledSet.has(i) : el.enabled !== false;
-      if (on) body += renderElement(el, dpi, data);
+      if (on) body += renderElement(el, dpi, data, qrCache);
     });
     return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
       <rect x="0" y="0" width="${W}" height="${H}" fill="#fff" stroke="#cbd5e1" stroke-width="0.3"/>

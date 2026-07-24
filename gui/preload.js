@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('zebra', {
   pickFile: (kind) => ipcRenderer.invoke('pick-file', kind),
   saveFile: (payload) => ipcRenderer.invoke('save-file', payload),
   testConnection: (connection) => ipcRenderer.invoke('test-connection', connection),
+  qrMatrix: (text) => ipcRenderer.invoke('qr-matrix', text),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (obj) => ipcRenderer.invoke('save-settings', obj),
   print: (payload) => ipcRenderer.invoke('print', payload),

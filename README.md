@@ -32,7 +32,7 @@ Design labels visually, fill fields (or scan them), and print over network or US
 |---|---|
 | 🖨️ **Multiple connections** | Network (raw port 9100), Windows printer by name (Win32 API — works with any port type, even Zebra Setup Utilities virtual ports), or USB device on Linux/Mac. |
 | 🧩 **Dynamic templates** | JSON templates with text, Code128 barcode, QR code, lines and boxes. Sizes in mm; 203/300 dpi. |
-| 🎨 **Visual editor** | Live preview; select, drag, resize and snap elements to a grid. No JSON editing required. |
+| 🎨 **Visual editor** | Live preview with **real Code128 & QR** rendering; select, drag, resize and snap elements to a grid. No JSON editing required. |
 | ⌨️ **Smart fields** | `{{field}}` inputs as text, dropdowns, or per‑option quantity lists (one label per unit). |
 | ⚡ **Scan & print** | Auto‑print after a barcode scan (the scanner acts as a keyboard) — ideal for batches. |
 | 📄 **CSV batch print** | Import a CSV and print one label per row (columns map to `{{fields}}`). |

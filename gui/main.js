@@ -9,6 +9,7 @@ app.setName('LabelForge');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
+const QRCode = require('qrcode');
 const { buildZpl, extractPlaceholders } = require('../lib/zpl');
 const { sendNetwork, sendWindowsPrinterByName, sendUSBWindows, sendUSBUnix } = require('../lib/print');
 
@@ -287,6 +288,16 @@ ipcMain.handle('test-connection', async (_e, connection) => {
     return { ok: true, message: 'Verifica manuale per la porta USB.' };
   } catch (e) {
     return { ok: false, error: 'Non raggiungibile: ' + e.message };
+  }
+});
+
+// Matrice QR reale per l'anteprima (0/1 per modulo).
+ipcMain.handle('qr-matrix', (_e, text) => {
+  try {
+    const qr = QRCode.create(String(text || ' '), { errorCorrectionLevel: 'M' });
+    return { size: qr.modules.size, data: Array.from(qr.modules.data) };
+  } catch (e) {
+    return { size: 0, data: [] };
   }
 });
 

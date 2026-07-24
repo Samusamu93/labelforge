@@ -13,6 +13,28 @@ let settings = {};
 let editorSel = null;      // indice elemento selezionato nell'editor
 let editorGrid = { show: true, snap: true, step: 0.5 };
 let importedRows = null;   // righe importate da CSV (stampa in blocco)
+const qrCache = {};        // valore QR -> { size, data } (matrice reale)
+
+function fillPh(str, data) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/\{\{\s*([\w.\-]+)\s*\}\}/g, (_, k) => { const v = (data || {})[k]; return v == null ? '' : String(v); });
+}
+function qrValuesOf(tpl, data) {
+  const vals = [];
+  (tpl.elements || []).forEach((e) => { if (e.type === 'qrcode') { const v = fillPh(e.text, data); if (v) vals.push(v); } });
+  return vals;
+}
+// Recupera le matrici QR mancanti dal processo principale, poi ridisegna.
+async function ensureQR(values, rerender) {
+  let added = false;
+  for (const v of values) {
+    if (!(v in qrCache)) {
+      qrCache[v] = { size: 0 }; // segnaposto anti-duplicati
+      try { const m = await window.zebra.qrMatrix(v); if (m && m.size) { qrCache[v] = m; added = true; } } catch (_) {}
+    }
+  }
+  if (added && typeof rerender === 'function') rerender();
+}
 
 // Parser CSV semplice: rileva delimitatore (, o ;), gestisce virgolette. Prima riga = intestazioni.
 function parseCSV(text) {
@@ -149,7 +171,8 @@ function updatePrintPreview() {
   }
   const multi = collectMulti();
   if (multi) { const first = multi.items[0]; data[multi.field] = first ? first.value : (current.fields.find(f => f.name === multi.field)?.options?.[0] || ''); }
-  el('previewFrame').innerHTML = window.LabelPreview.renderPreviewSVG(rawTemplate, data, collectEnabledIndices());
+  ensureQR(qrValuesOf(rawTemplate, data), updatePrintPreview);
+  el('previewFrame').innerHTML = window.LabelPreview.renderPreviewSVG(rawTemplate, data, collectEnabledIndices(), qrCache);
   el('previewNote').textContent = `${rawTemplate.width_mm}×${rawTemplate.height_mm} mm · ${rawTemplate.dpi || 203} dpi`;
 }
 
@@ -474,7 +497,8 @@ function drawEditorCanvas() {
   const W = Number(editing.width_mm) || 50, H = Number(editing.height_mm) || 25;
   const data = sampleData(editing);
   const allIdx = (editing.elements || []).map((_, i) => i); // in editor mostra tutti
-  const visual = window.LabelPreview.renderPreviewSVG(editing, data, allIdx).replace('<svg ', '<svg class="visual" ');
+  ensureQR(qrValuesOf(editing, data), drawEditorCanvas);
+  const visual = window.LabelPreview.renderPreviewSVG(editing, data, allIdx, qrCache).replace('<svg ', '<svg class="visual" ');
   const boxes = window.LabelPreview.computeBoxes(editing, data);
 
   let ov = `<svg class="overlay" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;

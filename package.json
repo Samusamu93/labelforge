@@ -15,23 +15,54 @@
     "dist:portable": "electron-builder --win portable",
     "pack:exe": "electron-packager . \"LabelForge\" --platform=win32 --arch=x64 --out=dist-app --overwrite --app-version=1.0.0"
   },
-  "keywords": ["zebra", "zd410", "zpl", "label", "printer", "etichette", "barcode", "qrcode", "electron"],
+  "keywords": [
+    "zebra",
+    "zd410",
+    "zpl",
+    "label",
+    "printer",
+    "etichette",
+    "barcode",
+    "qrcode",
+    "electron"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@electron/packager": "^18.3.5",
     "electron": "^31.0.0",
-    "electron-builder": "^24.13.3",
-    "@electron/packager": "^18.3.5"
+    "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.example.labelforge",
     "productName": "LabelForge",
-    "files": ["gui/**/*", "lib/**/*", "scripts/**/*", "templates/**/*", "cli.js"],
-    "extraResources": [
-      { "from": "templates", "to": "templates" },
-      { "from": "scripts", "to": "scripts" }
+    "files": [
+      "gui/**/*",
+      "lib/**/*",
+      "scripts/**/*",
+      "templates/**/*",
+      "cli.js"
     ],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "extraResources": [
+      {
+        "from": "templates",
+        "to": "templates"
+      },
+      {
+        "from": "scripts",
+        "to": "scripts"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
@@ -40,5 +71,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "LabelForge"
     }
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   }
 }
