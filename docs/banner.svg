@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-label="LabelForge">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#1f2937"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="320" rx="20" fill="url(#bg)"/>
+
+  <!-- label mockup card -->
+  <g transform="translate(72,74)">
+    <rect x="0" y="0" width="300" height="172" rx="12" fill="#ffffff"/>
+    <rect x="0" y="0" width="300" height="172" rx="12" fill="none" stroke="#3b82f6" stroke-opacity="0.35" stroke-width="2"/>
+    <text x="22" y="42" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Product #A-102</text>
+    <text x="22" y="72" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#6b7280">Category: PREMIUM</text>
+    <!-- barcode -->
+    <g transform="translate(22,92)" fill="#111827">
+      <rect x="0" y="0" width="4" height="56"/><rect x="8" y="0" width="2" height="56"/>
+      <rect x="14" y="0" width="6" height="56"/><rect x="24" y="0" width="2" height="56"/>
+      <rect x="30" y="0" width="4" height="56"/><rect x="38" y="0" width="8" height="56"/>
+      <rect x="50" y="0" width="2" height="56"/><rect x="56" y="0" width="4" height="56"/>
+      <rect x="64" y="0" width="6" height="56"/><rect x="74" y="0" width="2" height="56"/>
+      <rect x="80" y="0" width="4" height="56"/><rect x="88" y="0" width="2" height="56"/>
+      <rect x="94" y="0" width="8" height="56"/><rect x="106" y="0" width="2" height="56"/>
+      <rect x="112" y="0" width="4" height="56"/><rect x="120" y="0" width="6" height="56"/>
+      <rect x="130" y="0" width="2" height="56"/><rect x="136" y="0" width="4" height="56"/>
+      <rect x="144" y="0" width="8" height="56"/><rect x="156" y="0" width="2" height="56"/>
+      <rect x="162" y="0" width="4" height="56"/><rect x="170" y="0" width="6" height="56"/>
+      <rect x="180" y="0" width="2" height="56"/><rect x="186" y="0" width="4" height="56"/>
+    </g>
+    <!-- qr -->
+    <g transform="translate(232,92)" fill="#111827">
+      <rect x="0" y="0" width="56" height="56" fill="none" stroke="#111827" stroke-width="2"/>
+      <rect x="6" y="6" width="14" height="14"/><rect x="36" y="6" width="14" height="14"/>
+      <rect x="6" y="36" width="14" height="14"/><rect x="26" y="26" width="6" height="6"/>
+      <rect x="38" y="30" width="6" height="6"/><rect x="30" y="40" width="6" height="6"/>
+      <rect x="42" y="42" width="8" height="8"/>
+    </g>
+  </g>
+
+  <!-- text -->
+  <g transform="translate(430,0)">
+    <text x="0" y="150" font-family="Segoe UI, Arial, sans-serif" font-size="76" font-weight="800" fill="#ffffff">Label<tspan fill="url(#accent)">Forge</tspan></text>
+    <text x="4" y="196" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#cbd5e1">Stampa etichette ZPL su Zebra · editor visuale · anteprima live</text>
+    <g transform="translate(4,222)" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600">
+      <rect x="0" y="0" width="120" height="30" rx="15" fill="#0b1220" stroke="#3b82f6" stroke-opacity="0.5"/>
+      <text x="60" y="20" fill="#93c5fd" text-anchor="middle">Rete / USB</text>
+      <rect x="132" y="0" width="150" height="30" rx="15" fill="#0b1220" stroke="#3b82f6" stroke-opacity="0.5"/>
+      <text x="207" y="20" fill="#93c5fd" text-anchor="middle">Editor drag &amp; drop</text>
+      <rect x="294" y="0" width="150" height="30" rx="15" fill="#0b1220" stroke="#3b82f6" stroke-opacity="0.5"/>
+      <text x="369" y="20" fill="#93c5fd" text-anchor="middle">Scan &amp; print</text>
+    </g>
+  </g>
+</svg>

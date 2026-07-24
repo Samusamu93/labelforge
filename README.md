@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🏷️ LabelForge
+<img src="docs/banner.svg" width="820" alt="LabelForge">
 
-**Print ZPL labels on Zebra printers — desktop app + CLI, with a visual template editor.**
+### Print ZPL labels on Zebra printers — desktop app + CLI, with a visual template editor.
 
 Design labels visually, fill fields (or scan them), and print over network or USB.
 

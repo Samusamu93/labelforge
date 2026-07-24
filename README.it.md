@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🏷️ LabelForge
+<img src="docs/banner.svg" width="820" alt="LabelForge">
 
-**Stampa etichette ZPL su stampanti Zebra — app desktop + CLI, con editor visuale dei template.**
+### Stampa etichette ZPL su stampanti Zebra — app desktop + CLI, con editor visuale dei template.
 
 Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via rete o USB.
 
