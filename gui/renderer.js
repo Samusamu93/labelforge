@@ -350,6 +350,21 @@ async function downloadCsvTemplate() {
   if (!r.canceled) setStatus('ok', 'CSV di esempio salvato: ' + r.path);
 }
 
+let csvRaw = null; // { name, cols, rows } dell'ultimo CSV importato
+
+// Ricostruisce importedRows applicando la mappatura campo→colonna scelta nei menu.
+function applyCsvMapping() {
+  if (!csvRaw || !current) return;
+  const map = {};
+  current.fields.forEach((f) => { const s = el('map_' + f.name); if (s) map[f.name] = s.value; });
+  importedRows = csvRaw.rows.map((r) => {
+    const o = {};
+    current.fields.forEach((f) => { const col = map[f.name]; o[f.name] = col ? (r[col] ?? '') : ''; });
+    return o;
+  });
+  updatePrintPreview();
+}
+
 async function importCsv() {
   if (!current) return;
   const r = await window.zebra.pickFile('csv');
@@ -358,26 +373,30 @@ async function importCsv() {
   if (!rows.length) { setStatus('err', 'Il CSV non contiene righe di dati.'); return; }
 
   const cols = Object.keys(rows[0]);
-  const fields = current.fields.map((f) => f.name);
-  const matched = fields.filter((f) => cols.includes(f));
-  const missing = fields.filter((f) => !cols.includes(f));
-  const extra = cols.filter((c) => !fields.includes(c));
+  csvRaw = { name: r.name, cols, rows };
+  const fields = current.fields;
 
-  if (matched.length === 0) {
-    setStatus('err', `Nessuna colonna del CSV corrisponde ai campi del modello (${fields.join(', ') || 'nessuno'}). Usa "CSV di esempio" per ottenere le intestazioni corrette.`);
-    return;
-  }
-
-  importedRows = rows;
   const banner = el('csvBanner');
   banner.style.display = 'block';
-  let html = `📄 <b>${rows.length}</b> righe da <b>${r.name}</b>. Colonne usate: <b>${matched.join(', ')}</b>.`;
-  if (missing.length) html += `<br>⚠️ Campi del modello senza colonna (resteranno vuoti): ${missing.join(', ')}.`;
-  if (extra.length) html += `<br>ℹ️ Colonne ignorate (non nel modello): ${extra.join(', ')}.`;
-  html += `<br>Premi <b>Stampa etichetta</b> per stamparle tutte. <a href="#" id="csvCancel">Annulla import</a>`;
-  banner.innerHTML = html;
-  el('csvCancel').onclick = (e) => { e.preventDefault(); importedRows = null; banner.style.display = 'none'; updatePrintPreview(); };
-  updatePrintPreview();
+  const norm = (s) => s.toLowerCase().replace(/[_\-.\s]/g, '');
+  const rowsHtml = fields.map((f) => {
+    const autoCol = cols.find((c) => norm(c) === norm(f.name)) || '';
+    const opts = ['<option value="">(vuoto)</option>']
+      .concat(cols.map((c) => `<option value="${c}"${c === autoCol ? ' selected' : ''}>${c}</option>`))
+      .join('');
+    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0;">
+      <span style="min-width:150px;font-weight:600;">${fieldLabel(f)}</span>
+      <span style="color:var(--muted);">←</span>
+      <select id="map_${f.name}" style="flex:1;">${opts}</select>
+    </div>`;
+  }).join('');
+
+  banner.innerHTML = `📄 <b>${rows.length}</b> righe da <b>${r.name}</b> — abbina i campi del modello alle colonne del CSV:` +
+    `<div style="margin:8px 0;">${rowsHtml}</div>` +
+    `Poi premi <b>Stampa etichetta</b>. <a href="#" id="csvCancel">Annulla import</a>`;
+  el('csvCancel').onclick = (e) => { e.preventDefault(); csvRaw = null; importedRows = null; banner.style.display = 'none'; updatePrintPreview(); };
+  fields.forEach((f) => { const s = el('map_' + f.name); if (s) s.addEventListener('change', applyCsvMapping); });
+  applyCsvMapping();
 }
 
 /* ============================ SIDEBAR / TEMPLATE ============================ */
@@ -432,7 +451,7 @@ async function reprint(i) {
 async function selectTemplate(file) {
   current = templates.find((t) => t.file === file);
   if (!current) return;
-  importedRows = null;
+  importedRows = null; csvRaw = null;
   const cb = el('csvBanner'); if (cb) cb.style.display = 'none';
   rawTemplate = await window.zebra.loadTemplateRaw(file);
   el('tplTitle').textContent = current.name;

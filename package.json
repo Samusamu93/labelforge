@@ -1,6 +1,6 @@
 {
   "name": "labelforge",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Stampa etichette ZPL su stampanti Zebra (es. ZD410) via rete (IP) o USB/Windows, con template dinamici, editor visuale e interfaccia desktop.",
   "main": "gui/main.js",
   "type": "commonjs",
@@ -13,7 +13,7 @@
     "cli": "node cli.js",
     "dist": "electron-builder --win",
     "dist:portable": "electron-builder --win portable",
-    "pack:exe": "electron-packager . \"LabelForge\" --platform=win32 --arch=x64 --out=dist-app --overwrite --app-version=1.9.0"
+    "pack:exe": "electron-packager . \"LabelForge\" --platform=win32 --arch=x64 --out=dist-app --overwrite --app-version=1.10.0"
   },
   "keywords": [
     "zebra",
