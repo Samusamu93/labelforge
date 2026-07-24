@@ -2,6 +2,12 @@
 
 Tutte le modifiche rilevanti a LabelForge. / All notable changes to LabelForge.
 
+## v1.14.0
+- 🌍 **Interfaccia bilingue** English (predefinito) + Italiano, con selettore lingua nelle Impostazioni. / Bilingual UI (English default + Italian), switchable in Settings.
+- 🎨 Icona dell'app dedicata (exe, installer, finestra). / Dedicated app icon.
+- 🧪 Smoke test + workflow CI di test; metadati `package.json` completi; `SECURITY.md` e `CODE_OF_CONDUCT.md`.
+- 📝 Correzioni documentazione (EZPL, versioni). / Docs fixes.
+
 ## v1.12.0
 - 🩺 **Diagnostica stampante**: verifica raggiungibilità di rete, stato reale della stampante
   (errori tipo carta finita / testina aperta / pausa via `~HQES`), stato e coda della stampante
