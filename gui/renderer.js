@@ -58,6 +58,7 @@ async function ensureQR(values, rerender, dmValues) {
 
 // Parser CSV semplice: rileva delimitatore (, o ;), gestisce virgolette. Prima riga = intestazioni.
 function parseCSV(text) {
+  text = text.replace(/^﻿/, ''); // rimuove il BOM aggiunto da Excel
   const lines = text.replace(/\r\n?/g, '\n').split('\n').filter((l) => l.trim().length);
   if (!lines.length) return [];
   const delim = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
@@ -329,17 +330,52 @@ async function doPrint() {
   } else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
 }
 
+function csvCell(v) {
+  const s = String(v == null ? '' : v);
+  return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function sampleForField(name) {
+  if (/codice|cf|sku|ean|barcode|matricola|seriale|id/i.test(name)) return 'ABC-123456';
+  return humanize(name);
+}
+
+async function downloadCsvTemplate() {
+  if (!current) return;
+  const fields = current.fields.map((f) => f.name);
+  if (!fields.length) { setStatus('err', 'Questo modello non ha campi {{...}} da compilare.'); return; }
+  const header = fields.map(csvCell).join(',');
+  const sample = fields.map((f) => csvCell(sampleForField(f))).join(',');
+  const content = '﻿' + header + '\r\n' + sample + '\r\n'; // BOM per Excel
+  const r = await window.zebra.saveFile({ defaultName: current.name + '-esempio.csv', content });
+  if (!r.canceled) setStatus('ok', 'CSV di esempio salvato: ' + r.path);
+}
+
 async function importCsv() {
+  if (!current) return;
   const r = await window.zebra.pickFile('csv');
   if (r.canceled) { if (r.error) setStatus('err', r.error); return; }
   const rows = parseCSV(r.content);
   if (!rows.length) { setStatus('err', 'Il CSV non contiene righe di dati.'); return; }
-  importedRows = rows;
+
   const cols = Object.keys(rows[0]);
+  const fields = current.fields.map((f) => f.name);
+  const matched = fields.filter((f) => cols.includes(f));
+  const missing = fields.filter((f) => !cols.includes(f));
+  const extra = cols.filter((c) => !fields.includes(c));
+
+  if (matched.length === 0) {
+    setStatus('err', `Nessuna colonna del CSV corrisponde ai campi del modello (${fields.join(', ') || 'nessuno'}). Usa "CSV di esempio" per ottenere le intestazioni corrette.`);
+    return;
+  }
+
+  importedRows = rows;
   const banner = el('csvBanner');
   banner.style.display = 'block';
-  banner.innerHTML = `📄 <b>${rows.length}</b> righe da <b>${r.name}</b> — colonne: ${cols.join(', ')}. ` +
-    `Premi <b>Stampa etichetta</b> per stamparle tutte. <a href="#" id="csvCancel">Annulla import</a>`;
+  let html = `📄 <b>${rows.length}</b> righe da <b>${r.name}</b>. Colonne usate: <b>${matched.join(', ')}</b>.`;
+  if (missing.length) html += `<br>⚠️ Campi del modello senza colonna (resteranno vuoti): ${missing.join(', ')}.`;
+  if (extra.length) html += `<br>ℹ️ Colonne ignorate (non nel modello): ${extra.join(', ')}.`;
+  html += `<br>Premi <b>Stampa etichetta</b> per stamparle tutte. <a href="#" id="csvCancel">Annulla import</a>`;
+  banner.innerHTML = html;
   el('csvCancel').onclick = (e) => { e.preventDefault(); importedRows = null; banner.style.display = 'none'; updatePrintPreview(); };
   updatePrintPreview();
 }
@@ -839,6 +875,7 @@ async function init() {
   el('importTplBtn').addEventListener('click', importTemplate);
   el('testConnBtn').addEventListener('click', testConnection);
   el('importCsvBtn').addEventListener('click', importCsv);
+  el('csvTemplateBtn').addEventListener('click', downloadCsvTemplate);
   el('undoBtn').addEventListener('click', undo);
   el('redoBtn').addEventListener('click', redo);
 
