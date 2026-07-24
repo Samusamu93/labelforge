@@ -180,24 +180,24 @@
     <aside class="sidebar">
       <div class="sidehead">
         <h1>🏷️ LabelForge</h1>
-        <button class="icon-btn" id="settingsBtn" title="Impostazioni">⚙️</button>
-        <button class="icon-btn" id="helpBtn" title="Scorciatoie da tastiera">⌨️</button>
-        <button class="icon-btn" id="themeBtn" title="Tema chiaro/scuro">🌙</button>
+        <button class="icon-btn" id="settingsBtn" data-i18n-title="title.settings" title="Settings">⚙️</button>
+        <button class="icon-btn" id="helpBtn" data-i18n-title="title.help" title="Keyboard shortcuts">⌨️</button>
+        <button class="icon-btn" id="themeBtn" data-i18n-title="title.theme" title="Light/dark theme">🌙</button>
       </div>
 
       <div class="modeswitch">
-        <button id="modePrint" class="active">Stampa</button>
-        <button id="modeEditor">Editor</button>
+        <button id="modePrint" class="active" data-i18n="mode.print">Print</button>
+        <button id="modeEditor" data-i18n="mode.editor">Editor</button>
       </div>
 
-      <h3>Stampante</h3>
+      <h3 data-i18n="side.printer">Printer</h3>
       <div id="connSummary" style="font-size:13px; color:#e5e7eb; background:#1f2937; border:1px solid #374151; border-radius:7px; padding:8px 10px; margin-bottom:8px;">—</div>
-      <button class="ghost" id="openSettingsBtn" style="width:100%;">⚙️ Connessione e impostazioni</button>
+      <button class="ghost" id="openSettingsBtn" data-i18n="nav.settings" style="width:100%;">⚙️ Connection &amp; settings</button>
 
-      <h3>Modelli etichetta</h3>
-      <input type="text" class="side-search" id="tplSearch" placeholder="🔎 Cerca modello..." />
+      <h3 data-i18n="side.templates">Label templates</h3>
+      <input type="text" class="side-search" id="tplSearch" data-i18n-ph="side.search" placeholder="🔎 Search template..." />
       <div class="tpl-list" id="tplList"></div>
-      <button class="ghost" id="newTemplateBtn" style="margin-top:10px;">+ Nuovo modello</button>
+      <button class="ghost" id="newTemplateBtn" data-i18n="side.new" style="margin-top:10px;">+ New template</button>
     </aside>
 
     <!-- MAIN -->
@@ -209,30 +209,30 @@
           <div class="tpl-desc" id="templateDesc"></div>
           <div id="fields" style="margin-top:12px;"></div>
           <div id="elementsBox" style="display:none;">
-            <label>Elementi da stampare <span class="hint">(spunta cosa includere)</span></label>
+            <label><span data-i18n="print.elements">Elements to print</span> <span class="hint" data-i18n="print.elementsHint">(check what to include)</span></label>
             <div id="elements"></div>
           </div>
           <div class="row">
             <div class="field" style="max-width:140px;">
-              <label for="copies">Copie</label>
+              <label for="copies" data-i18n="print.copies">Copies</label>
               <input type="number" id="copies" value="1" min="1" max="999" />
             </div>
           </div>
           <label class="checkbox">
             <input type="checkbox" id="autoprint" checked />
-            Stampa automatica dopo la scansione
+            <span data-i18n="print.autoprint">Auto-print after scan</span>
           </label>
           <div class="toolbar" style="margin-top:10px;">
-            <button class="ghost" id="editThisBtn">✎ Modifica questo modello</button>
-            <button class="ghost" id="importCsvBtn">📄 Importa CSV (stampa in blocco)</button>
-            <button class="ghost" id="csvTemplateBtn">⬇ CSV di esempio</button>
+            <button class="ghost" id="editThisBtn" data-i18n="print.edit">✎ Edit this template</button>
+            <button class="ghost" id="importCsvBtn" data-i18n="print.importCsv">📄 Import CSV (batch print)</button>
+            <button class="ghost" id="csvTemplateBtn" data-i18n="print.sampleCsv">⬇ Sample CSV</button>
           </div>
           <div id="csvBanner" style="display:none; margin-top:10px; padding:10px 12px; border-radius:7px; background:#dbeafe; color:#1e40af; font-weight:500;"></div>
         </div>
-        <button class="primary" id="printBtn">Stampa etichetta</button>
+        <button class="primary" id="printBtn" data-i18n="print.print">Print label</button>
         <div id="status"></div>
         <div id="historyBox" style="display:none;">
-          <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;">Storico stampe</h2>
+          <h2 data-i18n="print.history" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;">Print history</h2>
           <div id="historyList"></div>
         </div>
       </div>
@@ -240,78 +240,78 @@
       <!-- EDITOR VIEW -->
       <div class="content" id="editorView" style="display:none;">
         <div class="edbar">
-          <button class="icononly" id="backToPrintBtn" title="Torna alla stampa">←</button>
+          <button class="icononly" id="backToPrintBtn" data-i18n-title="ed.back" title="Back to print">←</button>
           <span class="ed-title"><span class="dot"></span><span id="edTitle">Editor</span></span>
           <div class="divider"></div>
-          <button class="icononly" id="undoBtn" title="Annulla (Ctrl+Z)">↶</button>
-          <button class="icononly" id="redoBtn" title="Ripeti (Ctrl+Y)">↷</button>
+          <button class="icononly" id="undoBtn" data-i18n-title="ed.undo" title="Undo (Ctrl+Z)">↶</button>
+          <button class="icononly" id="redoBtn" data-i18n-title="ed.redo" title="Redo (Ctrl+Y)">↷</button>
           <div class="spacer"></div>
-          <button id="exportTplBtn" title="Esporta come file .json">⬆ Esporta</button>
-          <button id="importTplBtn" title="Importa da file .json">⬇ Importa</button>
+          <button id="exportTplBtn" data-i18n="ed.export" data-i18n-title="ed.exportT" title="Export as .json file">⬆ Export</button>
+          <button id="importTplBtn" data-i18n="ed.import" data-i18n-title="ed.importT" title="Import from .json file">⬇ Import</button>
           <div class="divider"></div>
-          <button class="danger" id="deleteTplBtn" title="Elimina modello">🗑</button>
-          <button id="duplicateTplBtn" title="Salva come nuovo modello">⧉ Salva come nuovo</button>
-          <button class="accent" id="saveTplBtn" title="Salva (Ctrl+S)">💾 Salva</button>
+          <button class="danger" id="deleteTplBtn" data-i18n-title="ed.deleteT" title="Delete template">🗑</button>
+          <button id="duplicateTplBtn" data-i18n="ed.duplicate" data-i18n-title="ed.duplicateT" title="Save as new template">⧉ Save as new</button>
+          <button class="accent" id="saveTplBtn" data-i18n="ed.save" data-i18n-title="ed.saveT" title="Save (Ctrl+S)">💾 Save</button>
         </div>
         <div class="card">
-          <h2>Proprietà etichetta</h2>
+          <h2 data-i18n="ed.props">Label properties</h2>
           <div class="row">
-            <div class="field"><label>Nome (file)</label><input type="text" id="edName" /></div>
-            <div class="field"><label>DPI</label>
+            <div class="field"><label data-i18n="ed.name">Name (file)</label><input type="text" id="edName" /></div>
+            <div class="field"><label data-i18n="ed.dpi">DPI</label>
               <select id="edDpi"><option value="203">203</option><option value="300">300</option><option value="600">600</option></select>
             </div>
-            <div class="field"><label>Linguaggio stampante</label>
+            <div class="field"><label data-i18n="ed.lang">Printer language</label>
               <select id="edLang">
-                <option value="zpl">ZPL (Zebra) — testato</option>
-                <option value="tspl">TSPL (TSC e simili) — sperimentale</option>
-                <option value="epl">EPL (Zebra/Eltron) — sperimentale</option>
-                <option value="cpcl">CPCL (Zebra mobile) — sperimentale</option>
-                <option value="ezpl">EZPL (Godex) — sperimentale</option>
+                <option value="zpl" data-i18n="lang.zpl">ZPL (Zebra) — tested</option>
+                <option value="tspl" data-i18n="lang.tspl">TSPL (TSC &amp; similar) — experimental</option>
+                <option value="epl" data-i18n="lang.epl">EPL (Zebra/Eltron) — experimental</option>
+                <option value="cpcl" data-i18n="lang.cpcl">CPCL (Zebra mobile) — experimental</option>
+                <option value="ezpl" data-i18n="lang.ezpl">EZPL (Godex) — experimental</option>
               </select>
             </div>
           </div>
-          <div class="field"><label>Descrizione</label><input type="text" id="edDesc" /></div>
+          <div class="field"><label data-i18n="ed.desc">Description</label><input type="text" id="edDesc" /></div>
           <div class="row">
-            <div class="field"><label>Larghezza (mm)</label><input type="number" id="edW" step="0.5" /></div>
-            <div class="field"><label>Altezza (mm)</label><input type="number" id="edH" step="0.5" /></div>
-            <div class="field"><label>Avanzo strappo (tear-off)</label><input type="number" id="edTear" step="1" /></div>
+            <div class="field"><label data-i18n="ed.width">Width (mm)</label><input type="number" id="edW" step="0.5" /></div>
+            <div class="field"><label data-i18n="ed.height">Height (mm)</label><input type="number" id="edH" step="0.5" /></div>
+            <div class="field"><label data-i18n="ed.tear">Tear-off offset</label><input type="number" id="edTear" step="1" /></div>
           </div>
         </div>
 
         <div class="card">
-          <h2>Elementi</h2>
+          <h2 data-i18n="ed.elements">Elements</h2>
           <div id="edElements"></div>
           <div class="toolbar" style="margin:8px 0 0;">
-            <button class="ghost" data-add="text">+ Testo</button>
+            <button class="ghost" data-add="text" data-i18n="ed.add.text">+ Text</button>
             <button class="ghost" data-add="barcode128">+ Barcode</button>
             <button class="ghost" data-add="code39">+ Code39</button>
             <button class="ghost" data-add="code93">+ Code93</button>
             <button class="ghost" data-add="ean13">+ EAN-13</button>
             <button class="ghost" data-add="qrcode">+ QR code</button>
             <button class="ghost" data-add="datamatrix">+ DataMatrix</button>
-            <button class="ghost" data-add="box">+ Riquadro</button>
-            <button class="ghost" data-add="line">+ Linea</button>
+            <button class="ghost" data-add="box" data-i18n="ed.add.box">+ Box</button>
+            <button class="ghost" data-add="line" data-i18n="ed.add.line">+ Line</button>
           </div>
         </div>
 
         <div class="card listmgr">
-          <h2>Campi a lista (select / provette)</h2>
-          <p class="mini">Definisci quali campi <code>{{...}}</code> sono menu a tendina o liste con quantità (es. provetta). Usa i nomi dei campi presenti nei testi degli elementi.</p>
+          <h2 data-i18n="ed.listFields">List fields (dropdown / quantities)</h2>
+          <p class="mini" data-i18n="ed.listHint">Define which {{...}} fields are dropdowns or quantity lists. Use the field names used in the element texts.</p>
           <div id="edFieldMeta"></div>
-          <button class="ghost" id="addFieldMetaBtn" style="margin-top:8px;">+ Aggiungi campo a lista</button>
+          <button class="ghost" id="addFieldMetaBtn" data-i18n="ed.addListField" style="margin-top:8px;">+ Add list field</button>
         </div>
         <div id="editorStatus"></div>
       </div>
 
       <!-- PREVIEW -->
       <div class="preview-pane">
-        <h3>Anteprima</h3>
+        <h3 data-i18n="prev.title">Preview</h3>
         <div id="previewControls" style="display:none; gap:14px; align-items:center; flex-wrap:wrap;">
-          <label class="checkbox" style="margin:0;"><input type="checkbox" id="chkGrid" checked> Griglia</label>
-          <label class="checkbox" style="margin:0;"><input type="checkbox" id="chkSnap" checked> Snap</label>
-          <label style="margin:0; display:flex; align-items:center; gap:6px; font-size:12px;">Passo
+          <label class="checkbox" style="margin:0;"><input type="checkbox" id="chkGrid" checked> <span data-i18n="prev.grid">Grid</span></label>
+          <label class="checkbox" style="margin:0;"><input type="checkbox" id="chkSnap" checked> <span data-i18n="prev.snap">Snap</span></label>
+          <label style="margin:0; display:flex; align-items:center; gap:6px; font-size:12px;"><span data-i18n="prev.step">Step</span>
             <select id="gridStep" style="width:auto; padding:4px 6px;">
-              <option value="0.5">0,5 mm</option>
+              <option value="0.5">0.5 mm</option>
               <option value="1">1 mm</option>
               <option value="2">2 mm</option>
               <option value="5">5 mm</option>
@@ -320,7 +320,7 @@
         </div>
         <div class="preview-frame" id="previewFrame"></div>
         <div class="preview-note" id="previewNote"></div>
-        <div class="preview-note" id="previewHint" style="display:none;">Clicca un elemento per selezionarlo, trascinalo per spostarlo, usa la maniglia in basso a destra per ridimensionarlo.</div>
+        <div class="preview-note" id="previewHint" data-i18n="prev.hint" style="display:none;">Click an element to select it, drag to move it, use the bottom-right handle to resize it.</div>
       </div>
     </div>
   </div>
@@ -329,62 +329,65 @@
   <div id="settingsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:22px 26px; width:460px; max-width:92vw; max-height:88vh; overflow:auto; box-shadow:0 10px 40px rgba(0,0,0,.3);">
       <div style="display:flex; align-items:center; margin-bottom:14px;">
-        <h2 style="margin:0; flex:1; font-size:17px;">⚙️ Impostazioni</h2>
-        <button class="icon-btn" id="settingsClose" title="Chiudi" style="font-size:18px;">✕</button>
+        <h2 data-i18n="set.title" style="margin:0; flex:1; font-size:17px;">⚙️ Settings</h2>
+        <button class="icon-btn" id="settingsClose" data-i18n-title="common.close" title="Close" style="font-size:18px;">✕</button>
       </div>
 
-      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:6px 0 8px;">Connessione</h3>
-      <div class="field"><label>Metodo</label>
+      <h3 data-i18n="set.appLang" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:6px 0 8px;">Language</h3>
+      <div class="field"><select id="uiLang"><option value="en">English</option><option value="it">Italiano</option></select></div>
+
+      <h3 data-i18n="set.connection" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Connection</h3>
+      <div class="field"><label data-i18n="set.method">Method</label>
         <select id="connType">
-          <option value="printer">Stampante Windows</option>
-          <option value="ip">Rete (IP)</option>
-          <option value="usb">Porta USB</option>
+          <option value="printer" data-i18n="set.conn.printer">Windows printer</option>
+          <option value="ip" data-i18n="set.conn.ip">Network (IP)</option>
+          <option value="usb" data-i18n="set.conn.usb">USB port</option>
         </select>
       </div>
-      <div class="field" id="wrapPrinter"><label>Stampante</label><select id="printerSelect"></select></div>
-      <div class="field" id="wrapIp" style="display:none;"><label>Indirizzo IP</label><input type="text" id="ipInput" placeholder="192.168.1.50" /></div>
-      <div class="field" id="wrapUsb" style="display:none;"><label>Porta USB</label><input type="text" id="usbInput" placeholder="USB001" /></div>
-      <div class="field"><label>Linguaggio predefinito (nuovi modelli)</label>
+      <div class="field" id="wrapPrinter"><label data-i18n="set.printer">Printer</label><select id="printerSelect"></select></div>
+      <div class="field" id="wrapIp" style="display:none;"><label data-i18n="set.ip">IP address</label><input type="text" id="ipInput" placeholder="192.168.1.50" /></div>
+      <div class="field" id="wrapUsb" style="display:none;"><label data-i18n="set.usb">USB port</label><input type="text" id="usbInput" placeholder="USB001" /></div>
+      <div class="field"><label data-i18n="set.defaultLang">Default language (new templates)</label>
         <select id="setLang">
-          <option value="zpl">ZPL (Zebra) — testato</option>
-          <option value="tspl">TSPL (TSC) — sperimentale</option>
-          <option value="epl">EPL (Eltron) — sperimentale</option>
-          <option value="cpcl">CPCL (Zebra mobile) — sperimentale</option>
-          <option value="ezpl">EZPL (Godex) — sperimentale</option>
+          <option value="zpl" data-i18n="lang.zpl">ZPL (Zebra) — tested</option>
+          <option value="tspl" data-i18n="lang.tspl">TSPL — experimental</option>
+          <option value="epl" data-i18n="lang.epl">EPL — experimental</option>
+          <option value="cpcl" data-i18n="lang.cpcl">CPCL — experimental</option>
+          <option value="ezpl" data-i18n="lang.ezpl">EZPL — experimental</option>
         </select>
       </div>
       <div class="toolbar" style="margin:0;">
-        <button class="ghost" id="testConnBtn">🔌 Prova connessione</button>
-        <button class="ghost" id="diagBtn">🩺 Diagnostica</button>
+        <button class="ghost" id="testConnBtn" data-i18n="set.test">🔌 Test connection</button>
+        <button class="ghost" id="diagBtn" data-i18n="set.diag">🩺 Diagnostics</button>
       </div>
       <div id="connStatus" style="font-size:12px; margin-top:8px;"></div>
       <div id="diagResults" style="margin-top:8px;"></div>
 
-      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Aspetto</h3>
-      <div class="field"><label>Tema</label>
-        <select id="setTheme"><option value="light">Chiaro</option><option value="dark">Scuro</option></select>
+      <h3 data-i18n="set.appearance" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Appearance</h3>
+      <div class="field"><label data-i18n="set.theme">Theme</label>
+        <select id="setTheme"><option value="light" data-i18n="set.theme.light">Light</option><option value="dark" data-i18n="set.theme.dark">Dark</option></select>
       </div>
 
-      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Stampa</h3>
-      <label class="checkbox" style="margin-bottom:10px;"><input type="checkbox" id="setAutoprint" /> Stampa automatica dopo la scansione</label>
+      <h3 data-i18n="set.printing" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Printing</h3>
+      <label class="checkbox" style="margin-bottom:10px;"><input type="checkbox" id="setAutoprint" /> <span data-i18n="set.autoprint">Auto-print after scan</span></label>
       <div class="row">
-        <div class="field"><label>Copie predefinite</label><input type="number" id="setCopies" min="1" value="1" /></div>
-        <div class="field"><label>Intensità (0–30)</label><input type="number" id="setDarkness" min="0" max="30" placeholder="auto" /></div>
-        <div class="field"><label>Velocità (1–6)</label><input type="number" id="setSpeed" min="1" max="6" placeholder="auto" /></div>
+        <div class="field"><label data-i18n="set.copies">Default copies</label><input type="number" id="setCopies" min="1" value="1" /></div>
+        <div class="field"><label data-i18n="set.darkness">Darkness (0–30)</label><input type="number" id="setDarkness" min="0" max="30" placeholder="auto" /></div>
+        <div class="field"><label data-i18n="set.speed">Speed (1–6)</label><input type="number" id="setSpeed" min="1" max="6" placeholder="auto" /></div>
       </div>
-      <p class="mini" style="color:var(--muted);margin:2px 0 0;">Intensità/velocità vuote = usa le impostazioni della stampante o del modello. Valgono per lo ZPL.</p>
+      <p class="mini" data-i18n="set.printNote" style="color:var(--muted);margin:2px 0 0;">Empty darkness/speed = use the printer or template settings. Applies to ZPL.</p>
 
-      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Editor</h3>
-      <label class="checkbox"><input type="checkbox" id="setGrid" /> Mostra griglia</label>
-      <label class="checkbox" style="margin:6px 0;"><input type="checkbox" id="setSnap" /> Aggancio alla griglia (snap)</label>
-      <div class="field" style="max-width:160px;"><label>Passo griglia (mm)</label>
-        <select id="setStep"><option value="0.5">0,5</option><option value="1">1</option><option value="2">2</option><option value="5">5</option></select>
+      <h3 data-i18n="set.editor" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Editor</h3>
+      <label class="checkbox"><input type="checkbox" id="setGrid" /> <span data-i18n="set.showGrid">Show grid</span></label>
+      <label class="checkbox" style="margin:6px 0;"><input type="checkbox" id="setSnap" /> <span data-i18n="set.snap">Snap to grid</span></label>
+      <div class="field" style="max-width:160px;"><label data-i18n="set.gridStep">Grid step (mm)</label>
+        <select id="setStep"><option value="0.5">0.5</option><option value="1">1</option><option value="2">2</option><option value="5">5</option></select>
       </div>
 
-      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Generale</h3>
+      <h3 data-i18n="set.general" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">General</h3>
       <div class="toolbar" style="margin:0;">
-        <button class="ghost" id="openFolderBtn">📁 Apri cartella modelli</button>
-        <button class="ghost danger" id="resetSettingsBtn">↺ Ripristina impostazioni</button>
+        <button class="ghost" id="openFolderBtn" data-i18n="set.openFolder">📁 Open templates folder</button>
+        <button class="ghost danger" id="resetSettingsBtn" data-i18n="set.reset">↺ Reset settings</button>
       </div>
       <p class="mini" id="appVersion" style="color:var(--muted);margin:12px 0 0;">LabelForge</p>
     </div>
@@ -394,21 +397,22 @@
   <div id="helpModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center;">
     <div style="background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:22px 26px; width:420px; max-width:90vw; box-shadow:0 10px 40px rgba(0,0,0,.3);">
       <div style="display:flex; align-items:center; margin-bottom:14px;">
-        <h2 style="margin:0; flex:1; font-size:17px;">⌨️ Scorciatoie da tastiera</h2>
-        <button class="icon-btn" id="helpClose" title="Chiudi" style="font-size:18px;">✕</button>
+        <h2 data-i18n="help.title" style="margin:0; flex:1; font-size:17px;">⌨️ Keyboard shortcuts</h2>
+        <button class="icon-btn" id="helpClose" data-i18n-title="common.close" title="Close" style="font-size:18px;">✕</button>
       </div>
       <table style="width:100%; border-collapse:collapse; font-size:14px;">
-        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>P</kbd></td><td>Stampa l'etichetta (in vista Stampa)</td></tr>
-        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>Salva il modello (in vista Editor)</td></tr>
-        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>Cerca tra i modelli</td></tr>
-        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Annulla (nell'editor)</td></tr>
-        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>Ripeti (nell'editor)</td></tr>
-        <tr><td style="padding:7px 0;"><kbd>Invio</kbd></td><td>Nel campo Scanner: stampa (se "stampa automatica" attiva)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>P</kbd></td><td data-i18n="help.print">Print the label (in Print view)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td data-i18n="help.save">Save the template (in Editor view)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td data-i18n="help.search">Search templates</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td data-i18n="help.undo">Undo (in the editor)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td data-i18n="help.redo">Redo (in the editor)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Enter</kbd></td><td data-i18n="help.enter">In the Scanner field: print (if auto-print is on)</td></tr>
       </table>
-      <p class="mini" style="margin-top:14px; color:var(--muted);">Su Mac usa <kbd>⌘</kbd> al posto di <kbd>Ctrl</kbd>.</p>
+      <p class="mini" data-i18n="help.mac" style="margin-top:14px; color:var(--muted);">On Mac use ⌘ instead of Ctrl.</p>
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="barcode.js"></script>
   <script src="preview.js"></script>
   <script src="renderer.js"></script>

@@ -40,7 +40,8 @@ Design labels visually, fill fields (or scan them), and print over network or US
 | 📄 **CSV batch print** | Import a CSV and print one label per row (columns map to `{{fields}}`). |
 | 🔁 **Share templates** | Export/import templates as `.json`; test the printer connection before printing. |
 | 🕘 **History & shortcuts** | Reprint from print history, template search, dark/light theme, editor undo/redo and keyboard shortcuts (Ctrl+P/S/F/Z/Y). |
-| 💾 **Remembers everything** | Printer, last template, theme and preferences saved between sessions. |
+| 🌍 **Bilingual UI** | English (default) and Italian, switchable in Settings. |
+| 💾 **Remembers everything** | Printer, last template, theme, language and preferences saved between sessions. |
 | 📦 **Ship as an app** | Package to a Windows `.exe`; a desktop shortcut is created automatically on first run. |
 
 ## 📋 Requirements

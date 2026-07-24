@@ -121,7 +121,7 @@ function listTemplates() {
 function loadTemplateRaw(file) {
   const map = listTemplateFiles();
   const info = map.get(file);
-  if (!info) throw new Error('Template non trovato: ' + file);
+  if (!info) throw new Error('Template not found: ' + file);
   return readTemplateFile(info.dir, file);
 }
 
@@ -142,7 +142,7 @@ function saveTemplate(file, json) {
 function deleteTemplate(file) {
   const full = path.join(USER_TEMPLATES_DIR, path.basename(file));
   if (fs.existsSync(full)) { fs.unlinkSync(full); return { ok: true }; }
-  return { ok: false, error: 'Solo i template personalizzati possono essere eliminati.' };
+  return { ok: false, error: 'Only custom templates can be deleted.' };
 }
 
 function listWindowsPrinters() {
@@ -178,7 +178,7 @@ async function doPrint({ file, data, copies, connection, enabledIndices, multiFi
     for (let i = 0; i < mult; i++) dataList.push({ ...data });
   }
   if (dataList.length === 0) {
-    throw new Error('Nessuna etichetta da stampare: imposta almeno una quantità maggiore di 0.');
+    throw new Error('Nothing to print: set at least one quantity greater than 0.');
   }
 
   const opts = {};
@@ -188,17 +188,17 @@ async function doPrint({ file, data, copies, connection, enabledIndices, multiFi
   const zpl = buildLabel(template, dataList, opts);
 
   if (connection.type === 'printer') {
-    if (!connection.printer) throw new Error('Seleziona una stampante.');
+    if (!connection.printer) throw new Error('Select a printer.');
     await sendWindowsPrinterByName(connection.printer, zpl);
   } else if (connection.type === 'ip') {
-    if (!connection.ip) throw new Error("Inserisci l'indirizzo IP della stampante.");
+    if (!connection.ip) throw new Error('Enter the printer IP address.');
     await sendNetwork(connection.ip, Number(connection.port) || 9100, zpl);
   } else if (connection.type === 'usb') {
-    if (!connection.usb) throw new Error('Inserisci la porta USB (es. USB001).');
+    if (!connection.usb) throw new Error('Enter the USB port (e.g. USB001).');
     if (process.platform === 'win32') await sendUSBWindows(connection.usb, zpl);
     else await sendUSBUnix(connection.usb, zpl);
   } else {
-    throw new Error('Metodo di connessione non valido.');
+    throw new Error('Invalid connection method.');
   }
   return { ok: true, count: dataList.length };
 }
@@ -280,18 +280,18 @@ ipcMain.handle('test-connection', async (_e, connection) => {
         sock.once('error', (err) => reject(err));
         sock.connect(Number(connection.port) || 9100, connection.ip);
       });
-      return { ok: true, message: `Stampante raggiungibile su ${connection.ip}:${connection.port || 9100}.` };
+      return { ok: true, message: `Printer reachable at ${connection.ip}:${connection.port || 9100}.` };
     }
     if (connection.type === 'printer') {
       const printers = await listWindowsPrinters();
       const found = printers.includes(connection.printer);
       return found
-        ? { ok: true, message: `Stampante "${connection.printer}" trovata in Windows.` }
-        : { ok: false, error: `Stampante "${connection.printer}" non trovata tra quelle installate.` };
+        ? { ok: true, message: `Printer "${connection.printer}" found in Windows.` }
+        : { ok: false, error: `Printer "${connection.printer}" not found among installed printers.` };
     }
-    return { ok: true, message: 'Verifica manuale per la porta USB.' };
+    return { ok: true, message: 'Manual check for the USB port.' };
   } catch (e) {
-    return { ok: false, error: 'Non raggiungibile: ' + e.message };
+    return { ok: false, error: 'Not reachable: ' + e.message };
   }
 });
 
@@ -338,13 +338,13 @@ function tcpQuery(host, port, payload, timeoutMs) {
 }
 function nonZeroHex(line) { return (line.match(/[0-9a-fA-F]{8}/g) || []).some((t) => /[1-9a-fA-F]/.test(t)); }
 function parseHQES(resp) {
-  if (!resp || !/ERROR|WARNING|PRINTER STATUS/i.test(resp)) return { ok: true, message: 'Connessa. Il firmware non riporta lo stato (normale su alcuni modelli).' };
+  if (!resp || !/ERROR|WARNING|PRINTER STATUS/i.test(resp)) return { ok: true, message: 'Connected. Firmware does not report status (normal on some models).' };
   const lines = resp.split(/\r?\n/);
   const err = lines.find((l) => /ERROR/i.test(l)) || '';
   const warn = lines.find((l) => /WARNING/i.test(l)) || '';
-  if (nonZeroHex(err)) return { ok: false, message: 'La stampante segnala un ERRORE (carta finita, testina aperta o in pausa). Controlla la stampante.' };
-  if (nonZeroHex(warn)) return { ok: true, message: 'Connessa, con un avviso attivo (es. carta in esaurimento o testina calda).' };
-  return { ok: true, message: 'Connessa, nessun errore segnalato.' };
+  if (nonZeroHex(err)) return { ok: false, message: 'The printer reports an ERROR (out of media, head open, or paused). Check the printer.' };
+  if (nonZeroHex(warn)) return { ok: true, message: 'Connected, with an active warning (e.g. media low or head warm).' };
+  return { ok: true, message: 'Connected, no errors reported.' };
 }
 function getPrinterInfo(name) {
   return new Promise((resolve) => {
@@ -365,30 +365,30 @@ ipcMain.handle('diagnose', async (_e, connection) => {
   try {
     if (connection.type === 'ip') {
       const host = connection.ip; const port = Number(connection.port) || 9100;
-      if (!host) { add(false, 'Indirizzo IP', 'Nessun IP impostato.'); return { results }; }
-      try { await tcpConnect(host, port, 4000); add(true, 'Raggiungibilità rete', `${host}:${port} raggiungibile.`); }
-      catch (e) { add(false, 'Raggiungibilità rete', `Impossibile connettersi a ${host}:${port}. Verifica che la stampante sia accesa e che l'IP sia corretto (potrebbe essere cambiato).`); return { results }; }
+      if (!host) { add(false, 'IP address', 'No IP set.'); return { results }; }
+      try { await tcpConnect(host, port, 4000); add(true, 'Network reachability', `${host}:${port} reachable.`); }
+      catch (e) { add(false, 'Network reachability', `Cannot connect to ${host}:${port}. Make sure the printer is on and the IP is correct (it may have changed).`); return { results }; }
       const resp = await tcpQuery(host, port, '~HQES\r\n', 3000);
       const st = parseHQES(resp);
-      add(st.ok, 'Stato stampante', st.message);
+      add(st.ok, 'Printer status', st.message);
     } else if (connection.type === 'printer') {
-      if (process.platform !== 'win32') { add(true, 'Stampante', 'Diagnostica per nome disponibile solo su Windows.'); return { results }; }
+      if (process.platform !== 'win32') { add(true, 'Printer', 'Diagnostics by name available only on Windows.'); return { results }; }
       const printers = await listWindowsPrinters();
       const found = printers.includes(connection.printer);
-      add(found, 'Stampante installata', found ? `"${connection.printer}" presente in Windows.` : `"${connection.printer}" non trovata tra le stampanti installate.`);
+      add(found, 'Printer installed', found ? `"${connection.printer}" present in Windows.` : `"${connection.printer}" not found among installed printers.`);
       if (!found) return { results };
       const info = await getPrinterInfo(connection.printer);
       const statusOk = !info.status || /normal|idle/i.test(info.status);
-      add(statusOk, 'Stato Windows', `Stato: ${info.status || '?'} · porta: ${info.port || '?'}`);
-      add(info.jobCount === 0, 'Coda di stampa', info.jobCount > 0 ? `${info.jobCount} lavori in coda: possibile blocco. Svuota la coda o riavvia lo spooler.` : 'Coda vuota.');
+      add(statusOk, 'Windows status', `Status: ${info.status || '?'} · port: ${info.port || '?'}`);
+      add(info.jobCount === 0, 'Print queue', info.jobCount > 0 ? `${info.jobCount} jobs queued: possible block. Clear the queue or restart the spooler.` : 'Queue empty.');
       if (/^lan_|_ip_|tcp|zdesigner/i.test(info.port || '')) {
-        add(true, 'Suggerimento', 'Porta di rete/virtuale: se i lavori restano in coda senza stampare, l\'IP della stampante potrebbe essere cambiato. Prova il metodo "Rete (IP)" con l\'indirizzo attuale, o imposta un IP fisso.');
+        add(true, 'Tip', 'Network/virtual port: if jobs stay queued without printing, the printer IP may have changed. Try the "Network (IP)" method with the current address, or set a static IP.');
       }
     } else {
-      add(true, 'USB', 'Assicurati che la stampante sia accesa e collegata; su Windows che la porta USB sia quella giusta.');
+      add(true, 'USB', 'Make sure the printer is on and connected; on Windows that the USB port is the right one.');
     }
   } catch (e) {
-    add(false, 'Errore diagnostica', e.message);
+    add(false, 'Diagnostics error', e.message);
   }
   return { results };
 });
@@ -427,7 +427,7 @@ function ensureDesktopShortcut() {
 }
 
 ipcMain.handle('create-desktop-shortcut', () => {
-  if (process.platform !== 'win32') return { ok: false, error: 'Solo su Windows.' };
+  if (process.platform !== 'win32') return { ok: false, error: 'Windows only.' };
   try {
     const target = app.isPackaged ? process.execPath : process.execPath; // in dev punta a electron.exe
     const lnk = path.join(app.getPath('desktop'), 'LabelForge.lnk');

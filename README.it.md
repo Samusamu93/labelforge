@@ -40,7 +40,8 @@ Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via 
 | 📄 **Stampa in blocco da CSV** | Importa un CSV e stampa una etichetta per riga (le colonne riempiono i `{{campi}}`). |
 | 🔁 **Condividi i template** | Esporta/importa i template come `.json`; testa la connessione alla stampante prima di stampare. |
 | 🕘 **Storico e scorciatoie** | Ristampa dallo storico, ricerca template, tema chiaro/scuro, undo/redo nell'editor e scorciatoie (Ctrl+P/S/F/Z/Y). |
-| 💾 **Ricorda tutto** | Stampante, ultimo template, tema e preferenze salvati tra un avvio e l'altro. |
+| 🌍 **Interfaccia bilingue** | Inglese (predefinito) e Italiano, selezionabile nelle Impostazioni. |
+| 💾 **Ricorda tutto** | Stampante, ultimo template, tema, lingua e preferenze salvati tra un avvio e l'altro. |
 | 📦 **Distribuisci come app** | Pacchettizzazione in `.exe` Windows; collegamento sul Desktop creato automaticamente al primo avvio. |
 
 ## 📋 Requisiti

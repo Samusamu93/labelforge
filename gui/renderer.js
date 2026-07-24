@@ -1,6 +1,7 @@
 'use strict';
 
 const el = (id) => document.getElementById(id);
+const t = (k, v) => window.I18N.t(k, v);
 const debounce = (fn, ms = 120) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 function humanize(name) { const s = String(name).replace(/[_\-.]/g, ' ').trim(); return s.charAt(0).toUpperCase() + s.slice(1); }
 
@@ -99,7 +100,7 @@ function renderFields(tpl) {
     wrap.className = 'field' + (isScan ? ' scan' : '');
     const label = document.createElement('label');
     label.textContent = fieldLabel(field);
-    if (isScan) { const b = document.createElement('span'); b.className = 'scan-badge'; b.textContent = 'Scanner'; label.appendChild(b); }
+    if (isScan) { const b = document.createElement('span'); b.className = 'scan-badge'; b.textContent = t('dyn.scanner'); label.appendChild(b); }
     wrap.appendChild(label);
 
     if (field.type === 'multi-qty' && Array.isArray(field.options)) {
@@ -256,7 +257,7 @@ function updatePrintPreview() {
 async function testConnection() {
   const box = el('connStatus');
   box.style.color = '#94a3b8';
-  box.textContent = 'Verifica in corso...';
+  box.textContent = t('dyn.testRunning');
   const r = await window.zebra.testConnection(getConnection());
   box.style.color = r.ok ? '#16a34a' : '#dc2626';
   box.textContent = (r.ok ? '✓ ' : '✗ ') + (r.ok ? r.message : (r.error || 'errore'));
@@ -264,7 +265,7 @@ async function testConnection() {
 
 async function runDiagnostics() {
   const box = el('diagResults');
-  box.innerHTML = '<span style="color:var(--muted);font-size:12px;">Diagnostica in corso...</span>';
+  box.innerHTML = '<span style="color:var(--muted);font-size:12px;">' + t('dyn.diagRunning') + '</span>';
   const res = await window.zebra.diagnose(getConnection());
   const rows = (res && res.results) || [];
   if (!rows.length) { box.innerHTML = ''; return; }
@@ -282,22 +283,22 @@ async function exportTemplate() {
   if (!tpl) return;
   const base = (el('edName') && el('edName').value.trim()) || tpl.name || 'template';
   const r = await window.zebra.saveFile({ defaultName: base + '.json', content: JSON.stringify(tpl, null, 2) });
-  if (!r.canceled) setEditorStatus('ok', 'Template esportato: ' + r.path);
+  if (!r.canceled) setEditorStatus('ok', t('dyn.exported', { p: r.path }));
 }
 
 async function importTemplate() {
   const r = await window.zebra.pickFile('json');
   if (r.canceled) { if (r.error) setEditorStatus('err', r.error); return; }
   let json;
-  try { json = JSON.parse(r.content); } catch (e) { setEditorStatus('err', 'JSON non valido: ' + e.message); return; }
+  try { json = JSON.parse(r.content); } catch (e) { setEditorStatus('err', t('dyn.badJson', { e: e.message })); return; }
   const fileName = json.name || r.name.replace(/\.json$/i, '') || 'importato';
   const res = await window.zebra.saveTemplate(fileName, json);
   if (res && res.ok) {
     await reloadTemplates();
     await selectTemplate(res.file);
     openEditor(json);
-    setEditorStatus('ok', 'Template importato e salvato.');
-  } else setEditorStatus('err', res?.error || 'Errore import.');
+    setEditorStatus('ok', t('dyn.imported'));
+  } else setEditorStatus('err', res?.error || 'Import error.');
 }
 
 async function doPrint() {
@@ -309,7 +310,7 @@ async function doPrint() {
   if (importedRows && importedRows.length) {
     el('printBtn').disabled = true;
     const total = importedRows.length * mult;
-    setStatus('info', `Invio in corso (${total} etichette da CSV)...`);
+    setStatus('info', t('dyn.sendingCsv', { n: total }));
     const payload = {
       file: current.file, data, copies: el('copies').value, connection: getConnection(),
       enabledIndices: collectEnabledIndices(), rows: importedRows,
@@ -317,18 +318,18 @@ async function doPrint() {
     };
     const res = await window.zebra.print(payload);
     el('printBtn').disabled = false;
-    if (res && res.ok) { setStatus('ok', `Inviate ${res.count} etichette dal CSV.`); recordHistory(payload, res.count); }
-    else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
+    if (res && res.ok) { setStatus('ok', t('dyn.sentCsv', { n: res.count })); recordHistory(payload, res.count); }
+    else setStatus('err', t('dyn.printErr', { e: res?.error || '?' }));
     return;
   }
 
-  if (scanFieldName && !data[scanFieldName]) { setStatus('err', `Compila il campo "${humanize(scanFieldName)}".`); el('f_' + scanFieldName)?.focus(); return; }
+  if (scanFieldName && !data[scanFieldName]) { setStatus('err', t('dyn.fillField', { f: (current.fields.find(f => f.name === scanFieldName)?.label) || humanize(scanFieldName) })); el('f_' + scanFieldName)?.focus(); return; }
   const multi = collectMulti();
-  if (multi && multi.items.length === 0) { setStatus('err', 'Imposta almeno una provetta con quantità maggiore di 0.'); return; }
+  if (multi && multi.items.length === 0) { setStatus('err', t('dyn.tubesMin')); return; }
   const total = multi ? multi.items.reduce((s, it) => s + it.qty, 0) * mult : mult;
 
   el('printBtn').disabled = true;
-  setStatus('info', `Invio in corso (${total} etichett${total === 1 ? 'a' : 'e'})...`);
+  setStatus('info', t('dyn.sending', { n: total }));
   const payload = {
     file: current.file, data, copies: el('copies').value, connection: getConnection(),
     enabledIndices: collectEnabledIndices(), multiField: multi ? multi.field : null, multiItems: multi ? multi.items : null,
@@ -337,10 +338,10 @@ async function doPrint() {
   const res = await window.zebra.print(payload);
   el('printBtn').disabled = false;
   if (res && res.ok) {
-    setStatus('ok', `Inviate ${res.count} etichett${res.count === 1 ? 'a' : 'e'}.`);
+    setStatus('ok', t('dyn.sent', { n: res.count }));
     recordHistory(payload, res.count);
     if (el('autoprint').checked && scanFieldName) { const s = el('f_' + scanFieldName); if (s) { s.value = ''; s.focus(); } updatePrintPreview(); }
-  } else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
+  } else setStatus('err', t('dyn.printErr', { e: res?.error || '?' }));
 }
 
 function csvCell(v) {
@@ -355,12 +356,12 @@ function sampleForField(name) {
 async function downloadCsvTemplate() {
   if (!current) return;
   const fields = current.fields.map((f) => f.name);
-  if (!fields.length) { setStatus('err', 'Questo modello non ha campi {{...}} da compilare.'); return; }
+  if (!fields.length) { setStatus('err', t('dyn.csvNoFields')); return; }
   const header = fields.map(csvCell).join(',');
   const sample = fields.map((f) => csvCell(sampleForField(f))).join(',');
   const content = '﻿' + header + '\r\n' + sample + '\r\n'; // BOM per Excel
   const r = await window.zebra.saveFile({ defaultName: current.name + '-esempio.csv', content });
-  if (!r.canceled) setStatus('ok', 'CSV di esempio salvato: ' + r.path);
+  if (!r.canceled) setStatus('ok', t('dyn.csvSaved', { p: r.path }));
 }
 
 let csvRaw = null; // { name, cols, rows } dell'ultimo CSV importato
@@ -383,7 +384,7 @@ async function importCsv() {
   const r = await window.zebra.pickFile('csv');
   if (r.canceled) { if (r.error) setStatus('err', r.error); return; }
   const rows = parseCSV(r.content);
-  if (!rows.length) { setStatus('err', 'Il CSV non contiene righe di dati.'); return; }
+  if (!rows.length) { setStatus('err', t('dyn.csvNoRows')); return; }
 
   const cols = Object.keys(rows[0]);
   csvRaw = { name: r.name, cols, rows };
@@ -394,7 +395,7 @@ async function importCsv() {
   const norm = (s) => s.toLowerCase().replace(/[_\-.\s]/g, '');
   const rowsHtml = fields.map((f) => {
     const autoCol = cols.find((c) => norm(c) === norm(f.name)) || '';
-    const opts = ['<option value="">(vuoto)</option>']
+    const opts = [`<option value="">${t('dyn.csvEmpty')}</option>`]
       .concat(cols.map((c) => `<option value="${c}"${c === autoCol ? ' selected' : ''}>${c}</option>`))
       .join('');
     return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0;">
@@ -404,9 +405,9 @@ async function importCsv() {
     </div>`;
   }).join('');
 
-  banner.innerHTML = `📄 <b>${rows.length}</b> righe da <b>${r.name}</b> — abbina i campi del modello alle colonne del CSV:` +
+  banner.innerHTML = t('dyn.csvMap', { n: rows.length, name: r.name }) +
     `<div style="margin:8px 0;">${rowsHtml}</div>` +
-    `Poi premi <b>Stampa etichetta</b>. <a href="#" id="csvCancel">Annulla import</a>`;
+    `${t('dyn.csvThenPrint')} <a href="#" id="csvCancel">${t('dyn.csvCancel')}</a>`;
   el('csvCancel').onclick = (e) => { e.preventDefault(); csvRaw = null; importedRows = null; banner.style.display = 'none'; updatePrintPreview(); };
   fields.forEach((f) => { const s = el('map_' + f.name); if (s) s.addEventListener('change', applyCsvMapping); });
   applyCsvMapping();
@@ -418,12 +419,12 @@ function renderTemplateList() {
   const list = el('tplList'); list.innerHTML = '';
   const q = tplFilter.trim().toLowerCase();
   templates
-    .filter((t) => !q || t.name.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q))
-    .forEach((t) => {
+    .filter((tpl) => !q || tpl.name.toLowerCase().includes(q) || (tpl.description || '').toLowerCase().includes(q))
+    .forEach((tpl) => {
       const b = document.createElement('button');
-      b.innerHTML = `${t.name}<br><span class="tag">${t.width_mm}×${t.height_mm}mm ${t.editable ? '· personalizzato' : '· di fabbrica'}</span>`;
-      if (current && t.file === current.file) b.classList.add('active');
-      b.onclick = () => selectTemplate(t.file);
+      b.innerHTML = `${tpl.name}<br><span class="tag">${tpl.width_mm}×${tpl.height_mm}mm · ${tpl.editable ? t('dyn.custom') : t('dyn.factory')}</span>`;
+      if (current && tpl.file === current.file) b.classList.add('active');
+      b.onclick = () => selectTemplate(tpl.file);
       list.appendChild(b);
     });
 }
@@ -446,8 +447,8 @@ function renderHistory() {
     const d = new Date(h.ts);
     const when = d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     const item = document.createElement('div'); item.className = 'hist-item';
-    item.innerHTML = `<div class="meta"><b>${h.templateName}</b> — ${h.count} etichett${h.count === 1 ? 'a' : 'e'}<br><small>${when}</small></div>`;
-    const btn = document.createElement('button'); btn.className = 'ghost'; btn.textContent = '↻ Ristampa';
+    item.innerHTML = `<div class="meta"><b>${h.templateName}</b> — ${h.count} ${t('dyn.labels')}<br><small>${when}</small></div>`;
+    const btn = document.createElement('button'); btn.className = 'ghost'; btn.textContent = t('dyn.reprint');
     btn.onclick = () => reprint(i);
     item.appendChild(btn);
     listEl.appendChild(item);
@@ -455,10 +456,10 @@ function renderHistory() {
 }
 async function reprint(i) {
   const h = history[i]; if (!h) return;
-  setStatus('info', 'Ristampa in corso...');
+  setStatus('info', t('dyn.sending', { n: h.count || '' }));
   const res = await window.zebra.print(h.payload);
-  if (res && res.ok) setStatus('ok', `Ristampate ${res.count} etichett${res.count === 1 ? 'a' : 'e'}.`);
-  else setStatus('err', 'Errore: ' + (res?.error || 'ristampa non riuscita.'));
+  if (res && res.ok) setStatus('ok', t('dyn.reprinted', { n: res.count }));
+  else setStatus('err', t('dyn.printErr', { e: res?.error || '?' }));
 }
 
 async function selectTemplate(file) {
@@ -496,7 +497,7 @@ function openEditor(raw) {
   editing = JSON.parse(JSON.stringify(raw));
   editorSel = null; undoStack = []; redoStack = [];
   el('edName').value = (current && current.file ? current.file.replace('.json', '') : editing.name) || 'nuovo-modello';
-  if (el('edTitle')) el('edTitle').textContent = current ? ('Modifica: ' + (current.name || el('edName').value)) : 'Nuovo modello';
+  if (el('edTitle')) el('edTitle').textContent = current ? t('dyn.editTitle', { n: (current.name || el('edName').value) }) : t('dyn.newTitle');
   refreshEditorUI();
   updateUndoButtons();
   setMode('editor');
@@ -528,16 +529,17 @@ function updateUndoButtons() {
   if (r) r.disabled = redoStack.length === 0;
 }
 
+// Etichette come chiavi i18n (risolte con t() al render).
 const ELEMENT_PROPS = {
-  text: [['text', 'Testo ({{campo}})', 'text', 'full'], ['height_mm', 'Altezza (mm)', 'number'], ['width_mm', 'Larghezza (mm)', 'number'], ['font', 'Font', 'text']],
-  barcode128: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
-  code39: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
-  ean13: [['text', 'Dato: 12-13 cifre ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
-  code93: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
-  datamatrix: [['text', 'Dato ({{campo}})', 'text', 'full'], ['magnification', 'Dimensione modulo', 'number']],
-  qrcode: [['text', 'Dato ({{campo}})', 'text', 'full'], ['magnification', 'Ingrandimento (1-10)', 'number']],
-  box: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
-  line: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
+  text: [['text', 'p.text', 'text', 'full'], ['height_mm', 'p.h', 'number'], ['width_mm', 'p.w', 'number'], ['font', 'p.font', 'text']],
+  barcode128: [['text', 'p.data', 'text', 'full'], ['bar_height_mm', 'p.barh', 'number'], ['module_width', 'p.module', 'number'], ['show_text', 'p.showtext', 'bool']],
+  code39: [['text', 'p.data', 'text', 'full'], ['bar_height_mm', 'p.barh', 'number'], ['module_width', 'p.module', 'number'], ['show_text', 'p.showtext', 'bool']],
+  ean13: [['text', 'p.dataDigits', 'text', 'full'], ['bar_height_mm', 'p.barh', 'number'], ['module_width', 'p.module', 'number'], ['show_text', 'p.showtext', 'bool']],
+  code93: [['text', 'p.data', 'text', 'full'], ['bar_height_mm', 'p.barh', 'number'], ['module_width', 'p.module', 'number'], ['show_text', 'p.showtext', 'bool']],
+  datamatrix: [['text', 'p.data', 'text', 'full'], ['magnification', 'p.dmsize', 'number']],
+  qrcode: [['text', 'p.data', 'text', 'full'], ['magnification', 'p.mag', 'number']],
+  box: [['width_mm', 'p.w', 'number'], ['height_mm', 'p.h', 'number'], ['thickness_mm', 'p.thick', 'number']],
+  line: [['width_mm', 'p.w', 'number'], ['height_mm', 'p.h', 'number'], ['thickness_mm', 'p.thick', 'number']],
 };
 
 function selectElement(i) {
@@ -577,10 +579,10 @@ function renderEditorElements() {
       const typeSel = document.createElement('select');
       ['text', 'barcode128', 'code39', 'code93', 'ean13', 'datamatrix', 'qrcode', 'box', 'line'].forEach((t) => { const o = document.createElement('option'); o.value = t; o.textContent = t; if (t === elem.type) o.selected = true; typeSel.appendChild(o); });
       typeSel.onchange = () => { readEditorIntoDraft(); pushSnapshot(); editing.elements[i].type = typeSel.value; renderEditorElements(); drawEditorCanvas(); };
-      const lbl = document.createElement('input'); lbl.type = 'text'; lbl.placeholder = 'Etichetta elemento'; lbl.value = elem.label || ''; lbl.dataset.prop = 'label'; lbl.style.flex = '1';
+      const lbl = document.createElement('input'); lbl.type = 'text'; lbl.placeholder = t('dyn.elLabelPh'); lbl.value = elem.label || ''; lbl.dataset.prop = 'label'; lbl.style.flex = '1';
       const en = document.createElement('label'); en.className = 'checkbox'; en.style.margin = '0';
       const enc = document.createElement('input'); enc.type = 'checkbox'; enc.checked = elem.enabled !== false; enc.dataset.prop = 'enabled';
-      en.append(enc, document.createTextNode('Attivo'));
+      en.append(enc, document.createTextNode(' ' + t('dyn.elActive')));
       bar.append(typeSel, lbl, en);
       row.appendChild(bar);
 
@@ -589,11 +591,11 @@ function renderEditorElements() {
       const props = common.concat(ELEMENT_PROPS[elem.type] || []);
       props.forEach(([prop, label, kind, span]) => {
         const fld = document.createElement('div'); fld.className = 'fld' + (span === 'full' ? ' full' : '');
-        const l = document.createElement('label'); l.textContent = label; fld.appendChild(l);
+        const l = document.createElement('label'); l.textContent = t(label); fld.appendChild(l);
         let input;
         if (kind === 'bool') {
           input = document.createElement('select');
-          [['true', 'Sì'], ['false', 'No']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; input.appendChild(o); });
+          [['true', t('bool.yes')], ['false', t('bool.no')]].forEach(([v, txt]) => { const o = document.createElement('option'); o.value = v; o.textContent = txt; input.appendChild(o); });
           input.value = String(elem[prop] !== false);
         } else {
           input = document.createElement('input'); input.type = kind === 'number' ? 'number' : 'text'; if (kind === 'number') input.step = '0.5';
@@ -619,15 +621,15 @@ function addFieldMetaRow(name, m) {
   const row = document.createElement('div'); row.className = 'elrow fm-row';
   row.innerHTML = `
     <div class="grid" style="grid-template-columns:1fr 1fr;">
-      <div class="fld"><label>Nome campo (senza {{}})</label><input type="text" class="fm-name" value="${(name || '')}"></div>
-      <div class="fld"><label>Tipo</label><select class="fm-type">
-        <option value="select">Menu a tendina</option>
-        <option value="multi-qty">Lista con quantità (provette)</option>
+      <div class="fld"><label>${t('fm.name')}</label><input type="text" class="fm-name" value="${(name || '')}"></div>
+      <div class="fld"><label>${t('fm.type')}</label><select class="fm-type">
+        <option value="select">${t('fm.typeSelect')}</option>
+        <option value="multi-qty">${t('fm.typeMulti')}</option>
       </select></div>
-      <div class="fld full"><label>Etichetta mostrata</label><input type="text" class="fm-label" value="${(m && m.label) ? m.label : ''}"></div>
-      <div class="fld full"><label>Opzioni (una per riga)</label><textarea class="fm-options" rows="4">${(m && m.options ? m.options.join('\n') : '')}</textarea></div>
+      <div class="fld full"><label>${t('fm.label')}</label><input type="text" class="fm-label" value="${(m && m.label) ? m.label : ''}"></div>
+      <div class="fld full"><label>${t('fm.options')}</label><textarea class="fm-options" rows="4">${(m && m.options ? m.options.join('\n') : '')}</textarea></div>
     </div>
-    <button class="qbtn fm-del" style="color:var(--err);margin-top:6px;">✕ Rimuovi campo</button>`;
+    <button class="qbtn fm-del" style="color:var(--err);margin-top:6px;">${t('fm.remove')}</button>`;
   row.querySelector('.fm-type').value = (m && m.type) || 'select';
   row.querySelector('.fm-del').onclick = () => { row.remove(); readEditorIntoDraft(); updateEditorPreview(); };
   row.querySelectorAll('input, select, textarea').forEach((inp) => inp.addEventListener('input', debounce(() => { readEditorIntoDraft(); updateEditorPreview(); })));
@@ -737,7 +739,7 @@ function drawEditorCanvas() {
   ov += `</svg>`;
 
   el('previewFrame').innerHTML = `<div class="canvaswrap">${visual}${ov}</div>`;
-  el('previewNote').textContent = `${W}×${H} mm · ${editing.dpi || 203} dpi (dati di esempio)`;
+  el('previewNote').textContent = `${W}×${H} mm · ${editing.dpi || 203} dpi (${t('prev.note.editor')})`;
   attachCanvasHandlers();
 }
 
@@ -808,23 +810,23 @@ function setEditorStatus(kind, msg) {
 async function saveEditor(asNew) {
   readEditorIntoDraft();
   let name = el('edName').value.trim();
-  if (!name) { setEditorStatus('err', 'Dai un nome al modello.'); return; }
+  if (!name) { setEditorStatus('err', t('dyn.nameNeeded')); return; }
   editing.name = name.replace(/\.json$/, '');
-  if (asNew && current && (name + '.json') === current.file) name = name + '-copia';
+  if (asNew && current && (name + '.json') === current.file) name = name + '-copy';
   const res = await window.zebra.saveTemplate(name, editing);
   if (res && res.ok) {
-    setEditorStatus('ok', 'Modello salvato.');
+    setEditorStatus('ok', t('dyn.saved'));
     await reloadTemplates();
     await selectTemplate(res.file);
-  } else setEditorStatus('err', 'Errore nel salvataggio: ' + (res?.error || '?'));
+  } else setEditorStatus('err', t('dyn.printErr', { e: res?.error || '?' }));
 }
 
 async function deleteEditor() {
   if (!current) return;
-  if (!current.editable) { setEditorStatus('err', 'I modelli di fabbrica non si possono eliminare. Usa "Salva come nuovo" per crearne una versione modificabile.'); return; }
+  if (!current.editable) { setEditorStatus('err', t('dyn.factoryDelete')); return; }
   const res = await window.zebra.deleteTemplate(current.file);
   if (res && res.ok) { await reloadTemplates(); if (templates[0]) await selectTemplate(templates[0].file); setMode('print'); }
-  else setEditorStatus('err', res?.error || 'Impossibile eliminare.');
+  else setEditorStatus('err', res?.error || 'Cannot delete.');
 }
 
 /* ============================ MODO / INIT ============================ */
@@ -854,8 +856,8 @@ function onConnTypeChange() {
 function updateConnSummary() {
   const box = el('connSummary'); if (!box) return;
   const type = el('connType').value;
-  if (type === 'printer') box.textContent = '🖨️ ' + (el('printerSelect').value || '(nessuna stampante)');
-  else if (type === 'ip') box.textContent = '🌐 ' + (el('ipInput').value || 'IP non impostato') + ':9100';
+  if (type === 'printer') box.textContent = '🖨️ ' + (el('printerSelect').value || t('dyn.noPrinter'));
+  else if (type === 'ip') box.textContent = '🌐 ' + (el('ipInput').value || t('dyn.noIp')) + ':9100';
   else box.textContent = '🔌 USB ' + (el('usbInput').value || '(porta?)');
 }
 
@@ -866,6 +868,16 @@ async function reloadTemplates() {
 
 async function init() {
   settings = await window.zebra.getSettings() || {};
+
+  // Lingua interfaccia (default English)
+  const uiLang = settings.uiLang || 'en';
+  window.I18N.setLang(uiLang);
+  document.documentElement.lang = uiLang;
+  window.I18N.applyStatic();
+  if (el('uiLang')) {
+    el('uiLang').value = uiLang;
+    el('uiLang').addEventListener('change', () => { window.zebra.saveSettings({ uiLang: el('uiLang').value }); location.reload(); });
+  }
 
   // Stampanti
   const printers = await window.zebra.listPrinters();
@@ -934,7 +946,7 @@ async function init() {
   // Generale: apri cartella, ripristina, versione
   el('openFolderBtn').addEventListener('click', () => window.zebra.openTemplatesFolder());
   el('resetSettingsBtn').addEventListener('click', async () => {
-    if (!confirm('Ripristinare tutte le impostazioni ai valori predefiniti?')) return;
+    if (!confirm(t('dyn.confirmReset'))) return;
     await window.zebra.resetSettings();
     location.reload();
   });
@@ -974,7 +986,7 @@ async function init() {
   el('gridStep').addEventListener('change', () => { editorGrid.step = Number(el('gridStep').value); window.zebra.saveSettings({ gridStep: editorGrid.step }); drawEditorCanvas(); });
 
   // Proprietà editor → anteprima live
-  el('edName').addEventListener('input', () => { if (el('edTitle')) el('edTitle').textContent = 'Modifica: ' + (el('edName').value || 'senza nome'); });
+  el('edName').addEventListener('input', () => { if (el('edTitle')) el('edTitle').textContent = t('dyn.editTitle', { n: (el('edName').value || '—') }); });
   ['edName', 'edDesc', 'edW', 'edH', 'edDpi', 'edTear', 'edLang'].forEach((id) =>
     el(id).addEventListener('input', debounce(() => { readEditorIntoDraft(); updateEditorPreview(); })));
 
