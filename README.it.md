@@ -107,6 +107,7 @@ linguaggio si imposta per template (editor → *Linguaggio stampante*).
 | **TSPL** | 🧪 Sperimentale, non testato | TSC (TE200, TDP‑244, TTP‑244), alcune Godex (EZPL è simile) |
 | **EPL** | 🧪 Sperimentale, non testato | Vecchie Zebra/Eltron (LP2824, TLP2844, alcune GK in modalità EPL) |
 | **CPCL** | 🧪 Sperimentale, non testato | Zebra portatili (QLn, ZQ511/ZQ521, iMZ) |
+| **EZPL** | 🧪 Sperimentale, non testato | Godex (G500, RT200, DT2x) |
 
 > ⚠️ **Solo ZPL è testato su hardware reale.** TSPL, EPL e CPCL sono forniti come punto di partenza e
 > **non** sono stati verificati su stampanti fisiche — la sintassi dei comandi e soprattutto la

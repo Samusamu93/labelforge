@@ -107,6 +107,7 @@ per template (editor → *Printer language*).
 | **TSPL** | 🧪 Experimental, untested | TSC (TE200, TDP‑244, TTP‑244), some Godex (EZPL is similar) |
 | **EPL** | 🧪 Experimental, untested | Older Zebra/Eltron (LP2824, TLP2844, some GK in EPL mode) |
 | **CPCL** | 🧪 Experimental, untested | Zebra mobile (QLn, ZQ511/ZQ521, iMZ) |
+| **EZPL** | 🧪 Experimental, untested | Godex (G500, RT200, DT2x) |
 
 > ⚠️ **Only ZPL is tested on real hardware.** TSPL, EPL and CPCL are provided as a starting point and
 > have **not** been verified on physical printers — command syntax and especially text sizing may need

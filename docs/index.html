@@ -19,8 +19,9 @@
     .btn { display:inline-block; padding:12px 22px; border-radius:10px; font-weight:700; text-decoration:none; }
     .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#06121f; }
     .btn.ghost { border:1px solid var(--border); color:var(--text); }
-    .badges { margin-top:18px; }
-    .badges img { height:22px; margin:0 3px; vertical-align:middle; }
+    .badges { margin-top:20px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+    .chip { font-size:12px; font-weight:700; border-radius:20px; padding:5px 12px; border:1px solid var(--border); background:var(--card); color:var(--text); }
+    .chip b { color:var(--accent2); }
     section { padding:34px 0; border-top:1px solid var(--border); }
     h2 { font-size:22px; margin:0 0 18px; }
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
@@ -42,11 +43,13 @@
       <div class="btns">
         <a class="btn primary" href="https://github.com/Samusamu93/labelforge/releases/latest">⬇ Scarica l'ultima versione</a>
         <a class="btn ghost" href="https://github.com/Samusamu93/labelforge">Codice su GitHub</a>
+        <a class="btn ghost" href="examples.html">Esempi di template</a>
       </div>
       <div class="badges">
-        <img src="https://img.shields.io/github/v/release/Samusamu93/labelforge" alt="release" />
-        <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT" />
-        <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue" alt="platform" />
+        <span class="chip">release <b>v1.5.0</b></span>
+        <span class="chip">licenza <b>MIT</b></span>
+        <span class="chip">Windows · Linux · macOS</span>
+        <span class="chip">ZPL · TSPL · EPL · CPCL · EZPL</span>
       </div>
     </header>
 

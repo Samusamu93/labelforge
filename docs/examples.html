@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabelForge — Esempi di template</title>
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#3b82f6; --accent2:#22d3ee; --border:#334155; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+    a { color:var(--accent2); }
+    .wrap { max-width:900px; margin:0 auto; padding:0 20px; }
+    header { text-align:center; padding:40px 0 10px; }
+    h1 { margin:0; font-size:30px; } h1 b { color:var(--accent2); }
+    .sub { color:var(--muted); }
+    .nav { text-align:center; margin:10px 0 20px; }
+    section { padding:22px 0; border-top:1px solid var(--border); }
+    h2 { font-size:20px; margin:0 0 6px; }
+    .desc { color:var(--muted); margin:0 0 12px; }
+    pre { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:14px 16px; overflow:auto; font-size:13px; }
+    code { font-family:Consolas,monospace; }
+    .tag { display:inline-block; font-size:11px; color:var(--muted); border:1px solid var(--border); border-radius:12px; padding:1px 9px; margin-left:8px; }
+    footer { text-align:center; color:var(--muted); padding:30px 0 50px; font-size:14px; }
+    .tip { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:12px 14px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Label<b>Forge</b> — Esempi di template</h1>
+      <p class="sub">Modelli JSON pronti da copiare in <code>templates/</code> o da importare dall'editor.</p>
+      <div class="nav"><a href="index.html">← Home</a> · <a href="https://github.com/Samusamu93/labelforge">GitHub</a></div>
+    </header>
+
+    <section>
+      <p class="tip">Ogni template è un file JSON con misure in mm. I campi <code>{{...}}</code> diventano
+      input nell'app (testo, menu a tendina o liste con quantità). Tipi di elemento disponibili:
+      <code>text</code>, <code>barcode128</code>, <code>code39</code>, <code>code93</code>,
+      <code>ean13</code>, <code>datamatrix</code>, <code>qrcode</code>, <code>box</code>, <code>line</code>.</p>
+    </section>
+
+    <section>
+      <h2>Etichetta prodotto <span class="tag">51 × 25 mm</span></h2>
+      <p class="desc">Titolo, sottotitolo e codice a barre Code128. Adatta a scaffali e magazzino.</p>
+      <pre><code>{
+  "name": "prodotto-51x25",
+  "dpi": 203, "width_mm": 51, "height_mm": 25, "tear_off": 30,
+  "elements": [
+    { "type": "text", "x_mm": 3, "y_mm": 2, "height_mm": 3.5, "text": "{{titolo}}" },
+    { "type": "text", "x_mm": 3, "y_mm": 7, "height_mm": 2.2, "text": "{{sottotitolo}}" },
+    { "type": "barcode128", "x_mm": 3, "y_mm": 11, "bar_height_mm": 9, "text": "{{codice}}" }
+  ]
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Spedizione <span class="tag">102 × 152 mm</span></h2>
+      <p class="desc">Destinatario, indirizzo e barcode dell'ordine. Formato 4×6 pollici.</p>
+      <pre><code>{
+  "name": "spedizione-102x152",
+  "dpi": 203, "width_mm": 102, "height_mm": 152, "tear_off": 30,
+  "elements": [
+    { "type": "text", "x_mm": 5, "y_mm": 6, "height_mm": 6, "text": "{{destinatario}}" },
+    { "type": "text", "x_mm": 5, "y_mm": 16, "height_mm": 4, "text": "{{indirizzo}}" },
+    { "type": "text", "x_mm": 5, "y_mm": 24, "height_mm": 4, "text": "{{citta_cap}}" },
+    { "type": "barcode128", "x_mm": 5, "y_mm": 120, "bar_height_mm": 22, "text": "{{ordine}}" }
+  ]
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Varianti prodotto <span class="tag">70 × 40 mm</span> <span class="tag">select + quantità</span></h2>
+      <p class="desc">Categoria come menu a tendina e taglie con quantità: stampa una etichetta per ogni taglia scelta. Include testo, barcode e QR.</p>
+      <pre><code>{
+  "name": "varianti-70x40",
+  "dpi": 203, "width_mm": 70, "height_mm": 40, "tear_off": 30,
+  "field_meta": {
+    "categoria": { "type": "select", "label": "Categoria", "options": ["STANDARD","PREMIUM","OUTLET"] },
+    "taglia": { "type": "multi-qty", "label": "Taglie (quantità)", "options": ["XS","S","M","L","XL"] }
+  },
+  "elements": [
+    { "type": "text", "x_mm": 3, "y_mm": 2, "height_mm": 4, "text": "{{prodotto}}" },
+    { "type": "text", "x_mm": 3, "y_mm": 8, "height_mm": 3, "text": "Cat: {{categoria}}  Taglia: {{taglia}}" },
+    { "type": "barcode128", "x_mm": 3, "y_mm": 19, "bar_height_mm": 12, "text": "{{sku}}" },
+    { "type": "qrcode", "x_mm": 48, "y_mm": 16, "magnification": 4, "text": "{{sku}}" }
+  ]
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Asset / inventario <span class="tag">50 × 30 mm</span> <span class="tag">QR + DataMatrix</span></h2>
+      <p class="desc">Etichetta cespite con QR (link/scheda) e DataMatrix per la marcatura compatta.</p>
+      <pre><code>{
+  "name": "asset-50x30",
+  "dpi": 203, "width_mm": 50, "height_mm": 30, "tear_off": 30,
+  "elements": [
+    { "type": "text", "x_mm": 3, "y_mm": 2, "height_mm": 3.5, "text": "{{nome}}" },
+    { "type": "text", "x_mm": 3, "y_mm": 7, "height_mm": 2.5, "text": "ID: {{id}}" },
+    { "type": "qrcode", "x_mm": 3, "y_mm": 11, "magnification": 4, "text": "{{id}}" },
+    { "type": "datamatrix", "x_mm": 30, "y_mm": 11, "magnification": 5, "text": "{{id}}" }
+  ]
+}</code></pre>
+    </section>
+
+    <section>
+      <p class="tip">💡 Per usarli: salva un file <code>.json</code> nella cartella <code>templates/</code>
+      (oppure Editor → <b>Importa .json</b>). Puoi anche partire da uno di questi e modificarlo
+      visivamente trascinando gli elementi nell'anteprima.</p>
+    </section>
+
+    <footer>LabelForge · <a href="https://github.com/Samusamu93/labelforge">github.com/Samusamu93/labelforge</a></footer>
+  </div>
+</body>
+</html>
