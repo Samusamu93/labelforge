@@ -22,9 +22,9 @@ Design labels visually, fill fields (or scan them), and print over network or US
 > (tested on the **ZD410**). It works from a clean desktop UI *or* the command line, with a
 > drag‑and‑drop template editor and a live preview. No paid dependencies.
 
-<!-- Add a screenshot here to make the page shine, e.g.:
-<div align="center"><img src="docs/screenshot.png" width="820" alt="LabelForge editor"></div>
--->
+<div align="center">
+  <img src="docs/screenshot.png" width="880" alt="LabelForge — print view with live preview">
+</div>
 
 ## ✨ Features
 

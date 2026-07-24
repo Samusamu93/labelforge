@@ -22,9 +22,9 @@ Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via 
 > Zebra (testata su **ZD410**). Funziona da un'interfaccia desktop pulita *oppure* da riga di
 > comando, con editor dei template drag‑and‑drop e anteprima live. Nessuna dipendenza a pagamento.
 
-<!-- Aggiungi qui uno screenshot per rendere la pagina più bella, es.:
-<div align="center"><img src="docs/screenshot.png" width="820" alt="Editor LabelForge"></div>
--->
+<div align="center">
+  <img src="docs/screenshot.png" width="880" alt="LabelForge — vista di stampa con anteprima live">
+</div>
 
 ## ✨ Caratteristiche
 
