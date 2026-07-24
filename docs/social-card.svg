@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="DejaVu Sans, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="acc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Etichetta mock -->
+  <g transform="translate(70,150)">
+    <rect x="0" y="0" width="440" height="340" rx="18" fill="#ffffff"/>
+    <rect x="0" y="0" width="440" height="340" rx="18" fill="none" stroke="#3b82f6" stroke-opacity="0.35" stroke-width="3"/>
+    <text x="34" y="70" font-size="40" font-weight="bold" fill="#111827">Prodotto A-102</text>
+    <text x="34" y="112" font-size="24" fill="#6b7280">Categoria: PREMIUM</text>
+  <g fill="#111827">
+    <rect x="34" y="150" width="5" height="110"/>
+    <rect x="42" y="150" width="7" height="110"/>
+    <rect x="52" y="150" width="3" height="110"/>
+    <rect x="64" y="150" width="3" height="110"/>
+    <rect x="76" y="150" width="7" height="110"/>
+    <rect x="114" y="150" width="3" height="110"/>
+    <rect x="120" y="150" width="9" height="110"/>
+    <rect x="132" y="150" width="9" height="110"/>
+    <rect x="144" y="150" width="3" height="110"/>
+    <rect x="150" y="150" width="3" height="110"/>
+    <rect x="162" y="150" width="3" height="110"/>
+    <rect x="186" y="150" width="9" height="110"/>
+    <rect x="206" y="150" width="3" height="110"/>
+    <rect x="224" y="150" width="9" height="110"/>
+    <rect x="236" y="150" width="5" height="110"/>
+    <rect x="254" y="150" width="3" height="110"/>
+    <rect x="266" y="150" width="5" height="110"/>
+    <rect x="274" y="150" width="5" height="110"/>
+    <rect x="282" y="150" width="5" height="110"/>
+  </g>
+  <rect x="320" y="150" width="90" height="90" fill="#fff" stroke="#111827" stroke-width="2"/>
+<g fill="#111827">
+  <rect x="352.7" y="150.0" width="8.2" height="8.2"/>
+  <rect x="369.1" y="150.0" width="8.2" height="8.2"/>
+  <rect x="377.3" y="150.0" width="8.2" height="8.2"/>
+  <rect x="360.9" y="158.2" width="8.2" height="8.2"/>
+  <rect x="344.5" y="166.4" width="8.2" height="8.2"/>
+  <rect x="360.9" y="166.4" width="8.2" height="8.2"/>
+  <rect x="377.3" y="166.4" width="8.2" height="8.2"/>
+  <rect x="328.2" y="174.5" width="8.2" height="8.2"/>
+  <rect x="336.4" y="174.5" width="8.2" height="8.2"/>
+  <rect x="344.5" y="174.5" width="8.2" height="8.2"/>
+  <rect x="352.7" y="174.5" width="8.2" height="8.2"/>
+  <rect x="360.9" y="174.5" width="8.2" height="8.2"/>
+  <rect x="377.3" y="174.5" width="8.2" height="8.2"/>
+  <rect x="385.5" y="174.5" width="8.2" height="8.2"/>
+  <rect x="320.0" y="182.7" width="8.2" height="8.2"/>
+  <rect x="336.4" y="182.7" width="8.2" height="8.2"/>
+  <rect x="344.5" y="182.7" width="8.2" height="8.2"/>
+  <rect x="352.7" y="182.7" width="8.2" height="8.2"/>
+  <rect x="360.9" y="182.7" width="8.2" height="8.2"/>
+  <rect x="377.3" y="182.7" width="8.2" height="8.2"/>
+  <rect x="393.6" y="182.7" width="8.2" height="8.2"/>
+  <rect x="401.8" y="182.7" width="8.2" height="8.2"/>
+  <rect x="344.5" y="190.9" width="8.2" height="8.2"/>
+  <rect x="360.9" y="190.9" width="8.2" height="8.2"/>
+  <rect x="377.3" y="190.9" width="8.2" height="8.2"/>
+  <rect x="401.8" y="190.9" width="8.2" height="8.2"/>
+  <rect x="320.0" y="199.1" width="8.2" height="8.2"/>
+  <rect x="328.2" y="199.1" width="8.2" height="8.2"/>
+  <rect x="336.4" y="199.1" width="8.2" height="8.2"/>
+  <rect x="344.5" y="199.1" width="8.2" height="8.2"/>
+  <rect x="352.7" y="199.1" width="8.2" height="8.2"/>
+  <rect x="360.9" y="199.1" width="8.2" height="8.2"/>
+  <rect x="369.1" y="199.1" width="8.2" height="8.2"/>
+  <rect x="385.5" y="199.1" width="8.2" height="8.2"/>
+  <rect x="393.6" y="199.1" width="8.2" height="8.2"/>
+  <rect x="401.8" y="199.1" width="8.2" height="8.2"/>
+  <rect x="320.0" y="207.3" width="8.2" height="8.2"/>
+  <rect x="328.2" y="207.3" width="8.2" height="8.2"/>
+  <rect x="344.5" y="207.3" width="8.2" height="8.2"/>
+  <rect x="352.7" y="207.3" width="8.2" height="8.2"/>
+  <rect x="377.3" y="207.3" width="8.2" height="8.2"/>
+  <rect x="385.5" y="207.3" width="8.2" height="8.2"/>
+  <rect x="401.8" y="207.3" width="8.2" height="8.2"/>
+  <rect x="369.1" y="215.5" width="8.2" height="8.2"/>
+  <rect x="377.3" y="215.5" width="8.2" height="8.2"/>
+  <rect x="393.6" y="215.5" width="8.2" height="8.2"/>
+  <rect x="344.5" y="223.6" width="8.2" height="8.2"/>
+  <rect x="360.9" y="223.6" width="8.2" height="8.2"/>
+  <rect x="369.1" y="223.6" width="8.2" height="8.2"/>
+  <rect x="377.3" y="223.6" width="8.2" height="8.2"/>
+  <rect x="385.5" y="223.6" width="8.2" height="8.2"/>
+  <rect x="344.5" y="231.8" width="8.2" height="8.2"/>
+  <rect x="377.3" y="231.8" width="8.2" height="8.2"/>
+  <rect x="401.8" y="231.8" width="8.2" height="8.2"/>
+  <rect x="320" y="150" width="24.5" height="24.5"/>
+  <rect x="328.2" y="158.2" width="8.2" height="8.2" fill="#fff"/>
+  <rect x="385.45454545454544" y="150" width="24.5" height="24.5"/>
+  <rect x="393.6" y="158.2" width="8.2" height="8.2" fill="#fff"/>
+  <rect x="320" y="215.45454545454544" width="24.5" height="24.5"/>
+  <rect x="328.2" y="223.6" width="8.2" height="8.2" fill="#fff"/>
+</g>
+
+  </g>
+
+  <!-- Testo destro -->
+  <text x="560" y="250" font-size="96" font-weight="bold" fill="#ffffff">Label</text>
+  <text x="854" y="250" font-size="96" font-weight="bold" fill="url(#acc)">Forge</text>
+  <text x="564" y="308" font-size="30" fill="#cbd5e1">Stampa etichette ZPL su stampanti Zebra</text>
+  <text x="564" y="348" font-size="30" fill="#cbd5e1">Editor visuale · anteprima live · CSV · diagnostica</text>
+
+  <g transform="translate(564,392)" font-size="22" font-weight="bold">
+    <rect x="0" y="0" width="290" height="46" rx="23" fill="#0b1220" stroke="#3b82f6" stroke-opacity="0.5"/>
+    <text x="145" y="30" fill="#93c5fd" text-anchor="middle">Code128 · QR · DataMatrix</text>
+    <rect x="308" y="0" width="180" height="46" rx="23" fill="#0b1220" stroke="#3b82f6" stroke-opacity="0.5"/>
+    <text x="398" y="30" fill="#93c5fd" text-anchor="middle">Rete · USB</text>
+  </g>
+
+  <text x="564" y="500" font-size="24" fill="#94a3b8">Gratis · Open Source (MIT) · Windows · Linux · macOS</text>
+  <text x="70" y="590" font-size="26" font-weight="bold" fill="#e2e8f0">github.com/Samusamu93/labelforge</text>
+</svg>
