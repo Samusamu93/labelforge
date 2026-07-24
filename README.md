@@ -31,7 +31,7 @@ Design labels visually, fill fields (or scan them), and print over network or US
 | | |
 |---|---|
 | 🖨️ **Multiple connections** | Network (raw port 9100), Windows printer by name (Win32 API — works with any port type, even Zebra Setup Utilities virtual ports), or USB device on Linux/Mac. |
-| 🌐 **Multi-language output** | Prints **ZPL** (Zebra ZPL family: ZD/GK/GX/ZT/ZQ, 203/300/600 dpi) or **TSPL** (TSC & similar). Same editor and preview; only the generated commands differ. |
+| 🌐 **Multi-language output** | Prints **ZPL** (tested) and, experimentally, **TSPL / EPL / CPCL**. Same editor and preview; only the generated commands differ. |
 | 🧩 **Dynamic templates** | JSON templates with text, barcodes (Code128, Code39, Code93, EAN‑13), QR code, DataMatrix, lines and boxes. Sizes in mm; 203/300 dpi. |
 | 🎨 **Visual editor** | Live preview with **real Code128 & QR** rendering; select, drag, resize and snap elements to a grid. No JSON editing required. |
 | ⌨️ **Smart fields** | `{{field}}` inputs as text, dropdowns, or per‑option quantity lists (one label per unit). |
@@ -95,6 +95,22 @@ git push origin v1.0.0
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Open an issue (templates provided)
 before large changes. The packaged app is not code‑signed, so Windows SmartScreen may warn on first
 run; signing and auto‑update are optional.
+
+## 🖨️ Printer languages & compatibility
+
+LabelForge generates the printer command language from the same visual template. The language is set
+per template (editor → *Printer language*).
+
+| Language | Status | Typical printers |
+|---|---|---|
+| **ZPL** | ✅ Tested (ZD410) | Zebra ZPL family: ZD410/ZD420/ZD620, GK420/GX420, ZT230/ZT411, ZQ mobile — 203/300/600 dpi |
+| **TSPL** | 🧪 Experimental, untested | TSC (TE200, TDP‑244, TTP‑244), some Godex (EZPL is similar) |
+| **EPL** | 🧪 Experimental, untested | Older Zebra/Eltron (LP2824, TLP2844, some GK in EPL mode) |
+| **CPCL** | 🧪 Experimental, untested | Zebra mobile (QLn, ZQ511/ZQ521, iMZ) |
+
+> ⚠️ **Only ZPL is tested on real hardware.** TSPL, EPL and CPCL are provided as a starting point and
+> have **not** been verified on physical printers — command syntax and especially text sizing may need
+> adjustment. Contributions and test reports for these languages are very welcome (open an issue).
 
 ## 🧩 Templates
 

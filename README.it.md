@@ -31,7 +31,7 @@ Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via 
 | | |
 |---|---|
 | 🖨️ **Connessioni multiple** | Rete (porta raw 9100), stampante Windows per nome (API Win32 — funziona con qualsiasi porta, anche quelle virtuali di Zebra Setup Utilities), o device USB su Linux/Mac. |
-| 🌐 **Più linguaggi** | Stampa in **ZPL** (famiglia Zebra: ZD/GK/GX/ZT/ZQ, 203/300/600 dpi) o **TSPL** (TSC e simili). Stessi editor e anteprima; cambiano solo i comandi generati. |
+| 🌐 **Più linguaggi** | Stampa in **ZPL** (testato) e, in via sperimentale, **TSPL / EPL / CPCL**. Stessi editor e anteprima; cambiano solo i comandi generati. |
 | 🧩 **Template dinamici** | Template JSON con testo, codici a barre (Code128, Code39, Code93, EAN‑13), QR code, DataMatrix, linee e riquadri. Misure in mm; 203/300 dpi. |
 | 🎨 **Editor visuale** | Anteprima live con **barcode Code128 e QR reali**; seleziona, trascina, ridimensiona e aggancia gli elementi a una griglia. Nessuna modifica manuale del JSON. |
 | ⌨️ **Campi intelligenti** | Campi `{{campo}}` come testo, menu a tendina o liste con quantità per voce (una etichetta per unità). |
@@ -95,6 +95,23 @@ git push origin v1.0.0
 I contributi sono benvenuti — vedi [CONTRIBUTING.md](CONTRIBUTING.md). Apri una issue (ci sono i
 modelli) prima di modifiche importanti. L'app impacchettata non è firmata, quindi Windows SmartScreen
 può avvisare al primo avvio; firma e auto‑aggiornamento sono opzionali.
+
+## 🖨️ Linguaggi stampante e compatibilità
+
+LabelForge genera il linguaggio di comando della stampante dallo stesso template visuale. Il
+linguaggio si imposta per template (editor → *Linguaggio stampante*).
+
+| Linguaggio | Stato | Stampanti tipiche |
+|---|---|---|
+| **ZPL** | ✅ Testato (ZD410) | Famiglia Zebra ZPL: ZD410/ZD420/ZD620, GK420/GX420, ZT230/ZT411, ZQ mobile — 203/300/600 dpi |
+| **TSPL** | 🧪 Sperimentale, non testato | TSC (TE200, TDP‑244, TTP‑244), alcune Godex (EZPL è simile) |
+| **EPL** | 🧪 Sperimentale, non testato | Vecchie Zebra/Eltron (LP2824, TLP2844, alcune GK in modalità EPL) |
+| **CPCL** | 🧪 Sperimentale, non testato | Zebra portatili (QLn, ZQ511/ZQ521, iMZ) |
+
+> ⚠️ **Solo ZPL è testato su hardware reale.** TSPL, EPL e CPCL sono forniti come punto di partenza e
+> **non** sono stati verificati su stampanti fisiche — la sintassi dei comandi e soprattutto la
+> dimensione del testo potrebbero richiedere aggiustamenti. Segnalazioni e contributi di test per
+> questi linguaggi sono molto graditi (apri una issue).
 
 ## 🧩 Template
 
