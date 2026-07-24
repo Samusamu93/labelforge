@@ -12,6 +12,29 @@ let scanFieldName = null;
 let settings = {};
 let editorSel = null;      // indice elemento selezionato nell'editor
 let editorGrid = { show: true, snap: true, step: 0.5 };
+let importedRows = null;   // righe importate da CSV (stampa in blocco)
+
+// Parser CSV semplice: rileva delimitatore (, o ;), gestisce virgolette. Prima riga = intestazioni.
+function parseCSV(text) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n').filter((l) => l.trim().length);
+  if (!lines.length) return [];
+  const delim = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
+  const parseLine = (line) => {
+    const out = []; let cur = ''; let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else { if (c === '"') q = true; else if (c === delim) { out.push(cur); cur = ''; } else cur += c; }
+    }
+    out.push(cur); return out;
+  };
+  const headers = parseLine(lines[0]).map((h) => h.trim());
+  return lines.slice(1).map((l) => {
+    const cells = parseLine(l); const o = {};
+    headers.forEach((h, i) => { o[h] = (cells[i] ?? '').trim(); });
+    return o;
+  });
+}
 
 /* ============================ STAMPA ============================ */
 
@@ -120,20 +143,73 @@ function setStatus(kind, msg) { const s = el('status'); s.className = kind; s.te
 
 function updatePrintPreview() {
   if (!rawTemplate) return;
-  const data = collectData();
+  let data = collectData();
+  if (importedRows && importedRows.length) {
+    data = { ...data, ...importedRows[0] }; // anteprima con la prima riga del CSV
+  }
   const multi = collectMulti();
   if (multi) { const first = multi.items[0]; data[multi.field] = first ? first.value : (current.fields.find(f => f.name === multi.field)?.options?.[0] || ''); }
   el('previewFrame').innerHTML = window.LabelPreview.renderPreviewSVG(rawTemplate, data, collectEnabledIndices());
   el('previewNote').textContent = `${rawTemplate.width_mm}×${rawTemplate.height_mm} mm · ${rawTemplate.dpi || 203} dpi`;
 }
 
+async function testConnection() {
+  const box = el('connStatus');
+  box.style.color = '#cbd5e1';
+  box.textContent = 'Verifica in corso...';
+  const r = await window.zebra.testConnection(getConnection());
+  box.style.color = r.ok ? '#4ade80' : '#f87171';
+  box.textContent = (r.ok ? '✓ ' : '✗ ') + (r.ok ? r.message : (r.error || 'errore'));
+}
+
+async function exportTemplate() {
+  let tpl;
+  if (el('editorView').style.display !== 'none' && editing) { readEditorIntoDraft(); tpl = editing; }
+  else tpl = rawTemplate;
+  if (!tpl) return;
+  const base = (el('edName') && el('edName').value.trim()) || tpl.name || 'template';
+  const r = await window.zebra.saveFile({ defaultName: base + '.json', content: JSON.stringify(tpl, null, 2) });
+  if (!r.canceled) setEditorStatus('ok', 'Template esportato: ' + r.path);
+}
+
+async function importTemplate() {
+  const r = await window.zebra.pickFile('json');
+  if (r.canceled) { if (r.error) setEditorStatus('err', r.error); return; }
+  let json;
+  try { json = JSON.parse(r.content); } catch (e) { setEditorStatus('err', 'JSON non valido: ' + e.message); return; }
+  const fileName = json.name || r.name.replace(/\.json$/i, '') || 'importato';
+  const res = await window.zebra.saveTemplate(fileName, json);
+  if (res && res.ok) {
+    await reloadTemplates();
+    await selectTemplate(res.file);
+    openEditor(json);
+    setEditorStatus('ok', 'Template importato e salvato.');
+  } else setEditorStatus('err', res?.error || 'Errore import.');
+}
+
 async function doPrint() {
   if (!current) return;
   const data = collectData();
+  const mult = Number(el('copies').value) || 1;
+
+  // Stampa in blocco da CSV
+  if (importedRows && importedRows.length) {
+    el('printBtn').disabled = true;
+    const total = importedRows.length * mult;
+    setStatus('info', `Invio in corso (${total} etichette da CSV)...`);
+    const res = await window.zebra.print({
+      file: current.file, data, copies: el('copies').value, connection: getConnection(),
+      enabledIndices: collectEnabledIndices(), rows: importedRows,
+    });
+    el('printBtn').disabled = false;
+    if (res && res.ok) setStatus('ok', `Inviate ${res.count} etichette dal CSV.`);
+    else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
+    return;
+  }
+
   if (scanFieldName && !data[scanFieldName]) { setStatus('err', `Compila il campo "${humanize(scanFieldName)}".`); el('f_' + scanFieldName)?.focus(); return; }
   const multi = collectMulti();
   if (multi && multi.items.length === 0) { setStatus('err', 'Imposta almeno una provetta con quantità maggiore di 0.'); return; }
-  const mult = Number(el('copies').value) || 1;
   const total = multi ? multi.items.reduce((s, it) => s + it.qty, 0) * mult : mult;
 
   el('printBtn').disabled = true;
@@ -147,6 +223,21 @@ async function doPrint() {
     setStatus('ok', `Inviate ${res.count} etichett${res.count === 1 ? 'a' : 'e'}.`);
     if (el('autoprint').checked && scanFieldName) { const s = el('f_' + scanFieldName); if (s) { s.value = ''; s.focus(); } updatePrintPreview(); }
   } else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
+}
+
+async function importCsv() {
+  const r = await window.zebra.pickFile('csv');
+  if (r.canceled) { if (r.error) setStatus('err', r.error); return; }
+  const rows = parseCSV(r.content);
+  if (!rows.length) { setStatus('err', 'Il CSV non contiene righe di dati.'); return; }
+  importedRows = rows;
+  const cols = Object.keys(rows[0]);
+  const banner = el('csvBanner');
+  banner.style.display = 'block';
+  banner.innerHTML = `📄 <b>${rows.length}</b> righe da <b>${r.name}</b> — colonne: ${cols.join(', ')}. ` +
+    `Premi <b>Stampa etichetta</b> per stamparle tutte. <a href="#" id="csvCancel">Annulla import</a>`;
+  el('csvCancel').onclick = (e) => { e.preventDefault(); importedRows = null; banner.style.display = 'none'; updatePrintPreview(); };
+  updatePrintPreview();
 }
 
 /* ============================ SIDEBAR / TEMPLATE ============================ */
@@ -165,6 +256,8 @@ function renderTemplateList() {
 async function selectTemplate(file) {
   current = templates.find((t) => t.file === file);
   if (!current) return;
+  importedRows = null;
+  const cb = el('csvBanner'); if (cb) cb.style.display = 'none';
   rawTemplate = await window.zebra.loadTemplateRaw(file);
   el('tplTitle').textContent = current.name;
   el('templateDesc').textContent = `${current.width_mm}×${current.height_mm} mm — ${current.description}`;
@@ -554,6 +647,10 @@ async function init() {
   el('saveTplBtn').addEventListener('click', () => saveEditor(false));
   el('duplicateTplBtn').addEventListener('click', () => saveEditor(true));
   el('deleteTplBtn').addEventListener('click', deleteEditor);
+  el('exportTplBtn').addEventListener('click', exportTemplate);
+  el('importTplBtn').addEventListener('click', importTemplate);
+  el('testConnBtn').addEventListener('click', testConnection);
+  el('importCsvBtn').addEventListener('click', importCsv);
   el('addFieldMetaBtn').addEventListener('click', () => addFieldMetaRow('', { type: 'select', options: [] }));
 
   // Controlli griglia / snap dell'anteprima interattiva

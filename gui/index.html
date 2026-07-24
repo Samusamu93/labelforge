@@ -165,6 +165,8 @@
         <label>Porta USB</label>
         <input type="text" id="usbInput" placeholder="USB001" />
       </div>
+      <button class="ghost" id="testConnBtn" style="width:100%;">🔌 Prova connessione</button>
+      <div id="connStatus" style="font-size:12px; margin-top:8px;"></div>
 
       <h3>Modelli etichetta</h3>
       <div class="tpl-list" id="tplList"></div>
@@ -193,7 +195,11 @@
             <input type="checkbox" id="autoprint" checked />
             Stampa automatica dopo la scansione
           </label>
-          <button class="ghost" id="editThisBtn" style="margin-top:10px;">✎ Modifica questo modello</button>
+          <div class="toolbar" style="margin-top:10px;">
+            <button class="ghost" id="editThisBtn">✎ Modifica questo modello</button>
+            <button class="ghost" id="importCsvBtn">📄 Importa CSV (stampa in blocco)</button>
+          </div>
+          <div id="csvBanner" style="display:none; margin-top:10px; padding:10px 12px; border-radius:7px; background:#dbeafe; color:#1e40af; font-weight:500;"></div>
         </div>
         <button class="primary" id="printBtn">Stampa etichetta</button>
         <div id="status"></div>
@@ -205,6 +211,8 @@
           <button class="ghost" id="saveTplBtn">💾 Salva modello</button>
           <button class="ghost" id="duplicateTplBtn">⧉ Salva come nuovo</button>
           <button class="ghost danger" id="deleteTplBtn">🗑 Elimina</button>
+          <button class="ghost" id="exportTplBtn">⬆ Esporta .json</button>
+          <button class="ghost" id="importTplBtn">⬇ Importa .json</button>
           <button class="ghost" id="backToPrintBtn">← Torna alla stampa</button>
         </div>
         <div class="card">

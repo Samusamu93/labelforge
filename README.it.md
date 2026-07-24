@@ -35,6 +35,8 @@ Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via 
 | 🎨 **Editor visuale** | Anteprima live; seleziona, trascina, ridimensiona e aggancia gli elementi a una griglia. Nessuna modifica manuale del JSON. |
 | ⌨️ **Campi intelligenti** | Campi `{{campo}}` come testo, menu a tendina o liste con quantità per voce (una etichetta per unità). |
 | ⚡ **Scansiona e stampa** | Stampa automatica dopo la scansione (il lettore si comporta come tastiera) — ideale per raffiche. |
+| 📄 **Stampa in blocco da CSV** | Importa un CSV e stampa una etichetta per riga (le colonne riempiono i `{{campi}}`). |
+| 🔁 **Condividi i template** | Esporta/importa i template come `.json`; testa la connessione alla stampante prima di stampare. |
 | 💾 **Ricorda tutto** | Stampante, ultimo template e preferenze salvati tra un avvio e l'altro. |
 | 📦 **Distribuisci come app** | Pacchettizzazione in `.exe` Windows; collegamento sul Desktop creato automaticamente al primo avvio. |
 

@@ -35,6 +35,8 @@ Design labels visually, fill fields (or scan them), and print over network or US
 | 🎨 **Visual editor** | Live preview; select, drag, resize and snap elements to a grid. No JSON editing required. |
 | ⌨️ **Smart fields** | `{{field}}` inputs as text, dropdowns, or per‑option quantity lists (one label per unit). |
 | ⚡ **Scan & print** | Auto‑print after a barcode scan (the scanner acts as a keyboard) — ideal for batches. |
+| 📄 **CSV batch print** | Import a CSV and print one label per row (columns map to `{{fields}}`). |
+| 🔁 **Share templates** | Export/import templates as `.json`; test the printer connection before printing. |
 | 💾 **Remembers everything** | Printer, last template and preferences saved between sessions. |
 | 📦 **Ship as an app** | Package to a Windows `.exe`; a desktop shortcut is created automatically on first run. |
 

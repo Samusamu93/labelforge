@@ -1,6 +1,7 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const net = require('net');
 
 // Archivio dati dedicato per la versione pubblica (non condivide i template
 // eventualmente salvati da altre build sullo stesso PC).
@@ -156,12 +157,17 @@ function listWindowsPrinters() {
   });
 }
 
-async function doPrint({ file, data, copies, connection, enabledIndices, multiField, multiItems }) {
+async function doPrint({ file, data, copies, connection, enabledIndices, multiField, multiItems, rows }) {
   const template = loadTemplateForPrint(file);
   const mult = Number(copies) || 1;
 
   let dataList = [];
-  if (multiField && Array.isArray(multiItems) && multiItems.length) {
+  if (Array.isArray(rows) && rows.length) {
+    // Stampa in blocco da CSV: una etichetta per riga (× copie)
+    for (const row of rows) {
+      for (let i = 0; i < mult; i++) dataList.push({ ...data, ...row });
+    }
+  } else if (multiField && Array.isArray(multiItems) && multiItems.length) {
     for (const it of multiItems) {
       const q = (Number(it.qty) || 0) * mult;
       for (let i = 0; i < q; i++) dataList.push({ ...data, [multiField]: it.value });
@@ -235,6 +241,55 @@ ipcMain.handle('delete-template', (_e, file) => {
   catch (e) { return { ok: false, error: e.message }; }
 });
 ipcMain.handle('list-printers', () => listWindowsPrinters());
+
+// Apri un file (CSV o JSON) e restituisci nome + contenuto testuale.
+ipcMain.handle('pick-file', async (_e, kind) => {
+  const filters = kind === 'csv'
+    ? [{ name: 'CSV', extensions: ['csv', 'txt'] }]
+    : [{ name: 'Template JSON', extensions: ['json'] }];
+  const r = await dialog.showOpenDialog({ properties: ['openFile'], filters });
+  if (r.canceled || !r.filePaths[0]) return { canceled: true };
+  try {
+    const content = fs.readFileSync(r.filePaths[0], 'utf8');
+    return { canceled: false, name: path.basename(r.filePaths[0]), content };
+  } catch (e) { return { canceled: true, error: e.message }; }
+});
+
+// Salva contenuto testuale scegliendo dove (Salva con nome).
+ipcMain.handle('save-file', async (_e, { defaultName, content }) => {
+  const r = await dialog.showSaveDialog({ defaultPath: defaultName || 'export.json' });
+  if (r.canceled || !r.filePath) return { canceled: true };
+  try { fs.writeFileSync(r.filePath, content, 'utf8'); return { canceled: false, path: r.filePath }; }
+  catch (e) { return { canceled: true, error: e.message }; }
+});
+
+// Test rapido di raggiungibilità della stampante.
+ipcMain.handle('test-connection', async (_e, connection) => {
+  try {
+    if (connection.type === 'ip') {
+      await new Promise((resolve, reject) => {
+        const sock = new net.Socket();
+        sock.setTimeout(4000);
+        sock.once('connect', () => { sock.destroy(); resolve(); });
+        sock.once('timeout', () => { sock.destroy(); reject(new Error('timeout')); });
+        sock.once('error', (err) => reject(err));
+        sock.connect(Number(connection.port) || 9100, connection.ip);
+      });
+      return { ok: true, message: `Stampante raggiungibile su ${connection.ip}:${connection.port || 9100}.` };
+    }
+    if (connection.type === 'printer') {
+      const printers = await listWindowsPrinters();
+      const found = printers.includes(connection.printer);
+      return found
+        ? { ok: true, message: `Stampante "${connection.printer}" trovata in Windows.` }
+        : { ok: false, error: `Stampante "${connection.printer}" non trovata tra quelle installate.` };
+    }
+    return { ok: true, message: 'Verifica manuale per la porta USB.' };
+  } catch (e) {
+    return { ok: false, error: 'Non raggiungibile: ' + e.message };
+  }
+});
+
 ipcMain.handle('get-settings', () => loadSettings());
 ipcMain.handle('save-settings', (_e, obj) => saveSettings(obj));
 ipcMain.handle('print', async (_e, payload) => {
