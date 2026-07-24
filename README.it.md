@@ -31,7 +31,7 @@ Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via 
 | | |
 |---|---|
 | 🖨️ **Connessioni multiple** | Rete (porta raw 9100), stampante Windows per nome (API Win32 — funziona con qualsiasi porta, anche quelle virtuali di Zebra Setup Utilities), o device USB su Linux/Mac. |
-| 🌐 **Più linguaggi** | Stampa in **ZPL** (testato) e, in via sperimentale, **TSPL / EPL / CPCL**. Stessi editor e anteprima; cambiano solo i comandi generati. |
+| 🌐 **Più linguaggi** | Stampa in **ZPL** (testato) e, in via sperimentale, **TSPL / EPL / CPCL / EZPL**. Stessi editor e anteprima; cambiano solo i comandi generati. |
 | 🧩 **Template dinamici** | Template JSON con testo, codici a barre (Code128, Code39, Code93, EAN‑13), QR code, DataMatrix, linee e riquadri. Misure in mm; 203/300 dpi. |
 | 🎨 **Editor visuale** | Anteprima live con **barcode Code128 e QR reali**; seleziona, trascina, ridimensiona e aggancia gli elementi a una griglia. Nessuna modifica manuale del JSON. |
 | ⌨️ **Campi intelligenti** | Campi `{{campo}}` come testo, menu a tendina o liste con quantità per voce (una etichetta per unità). |
@@ -109,9 +109,9 @@ linguaggio si imposta per template (editor → *Linguaggio stampante*).
 | **CPCL** | 🧪 Sperimentale, non testato | Zebra portatili (QLn, ZQ511/ZQ521, iMZ) |
 | **EZPL** | 🧪 Sperimentale, non testato | Godex (G500, RT200, DT2x) |
 
-> ⚠️ **Solo ZPL è testato su hardware reale.** TSPL, EPL e CPCL sono forniti come punto di partenza e
-> **non** sono stati verificati su stampanti fisiche — la sintassi dei comandi e soprattutto la
-> dimensione del testo potrebbero richiedere aggiustamenti. Segnalazioni e contributi di test per
+> ⚠️ **Solo ZPL è testato su hardware reale.** TSPL, EPL, CPCL ed EZPL sono forniti come punto di
+> partenza e **non** sono stati verificati su stampanti fisiche — la sintassi dei comandi e soprattutto
+> la dimensione del testo potrebbero richiedere aggiustamenti. Segnalazioni e contributi di test per
 > questi linguaggi sono molto graditi (apri una issue).
 
 ## 🧩 Template

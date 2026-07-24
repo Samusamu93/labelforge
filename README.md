@@ -31,7 +31,7 @@ Design labels visually, fill fields (or scan them), and print over network or US
 | | |
 |---|---|
 | 🖨️ **Multiple connections** | Network (raw port 9100), Windows printer by name (Win32 API — works with any port type, even Zebra Setup Utilities virtual ports), or USB device on Linux/Mac. |
-| 🌐 **Multi-language output** | Prints **ZPL** (tested) and, experimentally, **TSPL / EPL / CPCL**. Same editor and preview; only the generated commands differ. |
+| 🌐 **Multi-language output** | Prints **ZPL** (tested) and, experimentally, **TSPL / EPL / CPCL / EZPL**. Same editor and preview; only the generated commands differ. |
 | 🧩 **Dynamic templates** | JSON templates with text, barcodes (Code128, Code39, Code93, EAN‑13), QR code, DataMatrix, lines and boxes. Sizes in mm; 203/300 dpi. |
 | 🎨 **Visual editor** | Live preview with **real Code128 & QR** rendering; select, drag, resize and snap elements to a grid. No JSON editing required. |
 | ⌨️ **Smart fields** | `{{field}}` inputs as text, dropdowns, or per‑option quantity lists (one label per unit). |
@@ -109,9 +109,9 @@ per template (editor → *Printer language*).
 | **CPCL** | 🧪 Experimental, untested | Zebra mobile (QLn, ZQ511/ZQ521, iMZ) |
 | **EZPL** | 🧪 Experimental, untested | Godex (G500, RT200, DT2x) |
 
-> ⚠️ **Only ZPL is tested on real hardware.** TSPL, EPL and CPCL are provided as a starting point and
-> have **not** been verified on physical printers — command syntax and especially text sizing may need
-> adjustment. Contributions and test reports for these languages are very welcome (open an issue).
+> ⚠️ **Only ZPL is tested on real hardware.** TSPL, EPL, CPCL and EZPL are provided as a starting point
+> and have **not** been verified on physical printers — command syntax and especially text sizing may
+> need adjustment. Contributions and test reports for these languages are very welcome (open an issue).
 
 ## 🧩 Templates
 
