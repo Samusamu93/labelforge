@@ -87,12 +87,13 @@
     .tpl-desc { color: var(--muted); font-size: 12px; margin-top: 4px; }
 
     /* Sidebar mode switch */
-    .modeswitch { display: flex; gap: 6px; margin-bottom: 4px; }
+    .modeswitch { display: flex; gap: 4px; margin-bottom: 6px; background:#0b1220; border:1px solid #374151; border-radius: 9px; padding: 3px; }
     .modeswitch button {
-      flex: 1; padding: 8px; border-radius: 7px; border: 1px solid #374151;
-      background: #1f2937; color: #cbd5e1; cursor: pointer; font-weight: 600; font-size: 13px;
+      flex: 1; padding: 8px; border-radius: 6px; border: none;
+      background: transparent; color: #9ca3af; cursor: pointer; font-weight: 700; font-size: 13px; transition: background .12s, color .12s;
     }
-    .modeswitch button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .modeswitch button:hover { color:#e5e7eb; }
+    .modeswitch button.active { background: var(--accent); color: #fff; box-shadow:0 1px 3px rgba(0,0,0,.3); }
     .tpl-list { display: flex; flex-direction: column; gap: 4px; }
     .tpl-list button {
       text-align: left; padding: 8px 10px; border-radius: 7px; border: 1px solid transparent;
@@ -154,6 +155,20 @@
     .elrow .grid input, .elrow .grid select { padding: 6px 8px; font-size: 13px; }
     .elrow .full { grid-column: 1 / -1; }
     .toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    /* Barra strumenti editor, più curata */
+    .edbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 12px; margin-bottom:16px; position:sticky; top:0; z-index:5; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .edbar .ed-title { font-weight:700; font-size:14px; display:flex; align-items:center; gap:6px; }
+    .edbar .ed-title .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+    .edbar .spacer { flex:1; }
+    .edbar .divider { width:1px; height:26px; background:var(--border); margin:0 2px; }
+    .edbar button { padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--text); font-size:13px; font-weight:600; cursor:pointer; }
+    .edbar button:hover { border-color:var(--accent); color:var(--accent); }
+    .edbar button.accent { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .edbar button.accent:hover { background:var(--accent-hover); color:#fff; }
+    .edbar button.danger { color:var(--err); }
+    .edbar button.danger:hover { border-color:var(--err); }
+    .edbar button.icononly { padding:7px 10px; }
+    body.dark .edbar button { background:#0b1220; color:var(--text); }
     .listmgr .opt { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
     .listmgr .opt input { flex: 1; }
     .mini { font-size: 11px; color: var(--muted); }
@@ -224,15 +239,19 @@
 
       <!-- EDITOR VIEW -->
       <div class="content" id="editorView" style="display:none;">
-        <div class="toolbar">
-          <button class="ghost" id="undoBtn" title="Annulla (Ctrl+Z)">↶ Annulla</button>
-          <button class="ghost" id="redoBtn" title="Ripeti (Ctrl+Y)">↷ Ripeti</button>
-          <button class="ghost" id="saveTplBtn">💾 Salva modello</button>
-          <button class="ghost" id="duplicateTplBtn">⧉ Salva come nuovo</button>
-          <button class="ghost danger" id="deleteTplBtn">🗑 Elimina</button>
-          <button class="ghost" id="exportTplBtn">⬆ Esporta .json</button>
-          <button class="ghost" id="importTplBtn">⬇ Importa .json</button>
-          <button class="ghost" id="backToPrintBtn">← Torna alla stampa</button>
+        <div class="edbar">
+          <button class="icononly" id="backToPrintBtn" title="Torna alla stampa">←</button>
+          <span class="ed-title"><span class="dot"></span><span id="edTitle">Editor</span></span>
+          <div class="divider"></div>
+          <button class="icononly" id="undoBtn" title="Annulla (Ctrl+Z)">↶</button>
+          <button class="icononly" id="redoBtn" title="Ripeti (Ctrl+Y)">↷</button>
+          <div class="spacer"></div>
+          <button id="exportTplBtn" title="Esporta come file .json">⬆ Esporta</button>
+          <button id="importTplBtn" title="Importa da file .json">⬇ Importa</button>
+          <div class="divider"></div>
+          <button class="danger" id="deleteTplBtn" title="Elimina modello">🗑</button>
+          <button id="duplicateTplBtn" title="Salva come nuovo modello">⧉ Salva come nuovo</button>
+          <button class="accent" id="saveTplBtn" title="Salva (Ctrl+S)">💾 Salva</button>
         </div>
         <div class="card">
           <h2>Proprietà etichetta</h2>
@@ -334,8 +353,12 @@
           <option value="ezpl">EZPL (Godex) — sperimentale</option>
         </select>
       </div>
-      <button class="ghost" id="testConnBtn">🔌 Prova connessione</button>
+      <div class="toolbar" style="margin:0;">
+        <button class="ghost" id="testConnBtn">🔌 Prova connessione</button>
+        <button class="ghost" id="diagBtn">🩺 Diagnostica</button>
+      </div>
       <div id="connStatus" style="font-size:12px; margin-top:8px;"></div>
+      <div id="diagResults" style="margin-top:8px;"></div>
 
       <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Aspetto</h3>
       <div class="field"><label>Tema</label>

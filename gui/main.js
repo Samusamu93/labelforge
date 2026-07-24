@@ -312,6 +312,86 @@ ipcMain.handle('dm-image', async (_e, text) => {
   } catch (e) { return ''; }
 });
 
+// --- Diagnostica ---
+function tcpConnect(host, port, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const s = new net.Socket(); let done = false;
+    const fin = (e) => { if (done) return; done = true; s.destroy(); e ? reject(e) : resolve(); };
+    s.setTimeout(timeoutMs);
+    s.once('timeout', () => fin(new Error('timeout')));
+    s.once('error', fin);
+    s.connect(port, host, () => fin());
+  });
+}
+function tcpQuery(host, port, payload, timeoutMs) {
+  return new Promise((resolve) => {
+    const s = new net.Socket(); let buf = ''; let done = false;
+    const fin = () => { if (done) return; done = true; s.destroy(); resolve(buf); };
+    s.setTimeout(timeoutMs);
+    s.once('timeout', fin);
+    s.once('error', fin);
+    s.once('end', fin);
+    s.connect(port, host, () => s.write(payload));
+    s.on('data', (d) => { buf += d.toString('latin1'); if (buf.length > 4096) fin(); });
+  });
+}
+function nonZeroHex(line) { return (line.match(/[0-9a-fA-F]{8}/g) || []).some((t) => /[1-9a-fA-F]/.test(t)); }
+function parseHQES(resp) {
+  if (!resp || !/ERROR|WARNING|PRINTER STATUS/i.test(resp)) return { ok: true, message: 'Connessa. Il firmware non riporta lo stato (normale su alcuni modelli).' };
+  const lines = resp.split(/\r?\n/);
+  const err = lines.find((l) => /ERROR/i.test(l)) || '';
+  const warn = lines.find((l) => /WARNING/i.test(l)) || '';
+  if (nonZeroHex(err)) return { ok: false, message: 'La stampante segnala un ERRORE (carta finita, testina aperta o in pausa). Controlla la stampante.' };
+  if (nonZeroHex(warn)) return { ok: true, message: 'Connessa, con un avviso attivo (es. carta in esaurimento o testina calda).' };
+  return { ok: true, message: 'Connessa, nessun errore segnalato.' };
+}
+function getPrinterInfo(name) {
+  return new Promise((resolve) => {
+    const esc = name.replace(/'/g, "''");
+    execFile('powershell.exe', ['-NoProfile', '-Command',
+      `$ErrorActionPreference='SilentlyContinue'; $p=Get-Printer -Name '${esc}'; $j=(Get-PrintJob -PrinterName '${esc}' | Measure-Object).Count; Write-Output ($p.PrinterStatus.ToString()+'|'+$p.PortName+'|'+$j)`],
+      (err, stdout) => {
+        if (err || !stdout) return resolve({});
+        const [status, port, jobs] = stdout.trim().split('|');
+        resolve({ status, port, jobCount: Number(jobs) || 0 });
+      });
+  });
+}
+
+ipcMain.handle('diagnose', async (_e, connection) => {
+  const results = [];
+  const add = (ok, label, detail) => results.push({ ok, label, detail });
+  try {
+    if (connection.type === 'ip') {
+      const host = connection.ip; const port = Number(connection.port) || 9100;
+      if (!host) { add(false, 'Indirizzo IP', 'Nessun IP impostato.'); return { results }; }
+      try { await tcpConnect(host, port, 4000); add(true, 'Raggiungibilità rete', `${host}:${port} raggiungibile.`); }
+      catch (e) { add(false, 'Raggiungibilità rete', `Impossibile connettersi a ${host}:${port}. Verifica che la stampante sia accesa e che l'IP sia corretto (potrebbe essere cambiato).`); return { results }; }
+      const resp = await tcpQuery(host, port, '~HQES\r\n', 3000);
+      const st = parseHQES(resp);
+      add(st.ok, 'Stato stampante', st.message);
+    } else if (connection.type === 'printer') {
+      if (process.platform !== 'win32') { add(true, 'Stampante', 'Diagnostica per nome disponibile solo su Windows.'); return { results }; }
+      const printers = await listWindowsPrinters();
+      const found = printers.includes(connection.printer);
+      add(found, 'Stampante installata', found ? `"${connection.printer}" presente in Windows.` : `"${connection.printer}" non trovata tra le stampanti installate.`);
+      if (!found) return { results };
+      const info = await getPrinterInfo(connection.printer);
+      const statusOk = !info.status || /normal|idle/i.test(info.status);
+      add(statusOk, 'Stato Windows', `Stato: ${info.status || '?'} · porta: ${info.port || '?'}`);
+      add(info.jobCount === 0, 'Coda di stampa', info.jobCount > 0 ? `${info.jobCount} lavori in coda: possibile blocco. Svuota la coda o riavvia lo spooler.` : 'Coda vuota.');
+      if (/^lan_|_ip_|tcp|zdesigner/i.test(info.port || '')) {
+        add(true, 'Suggerimento', 'Porta di rete/virtuale: se i lavori restano in coda senza stampare, l\'IP della stampante potrebbe essere cambiato. Prova il metodo "Rete (IP)" con l\'indirizzo attuale, o imposta un IP fisso.');
+      }
+    } else {
+      add(true, 'USB', 'Assicurati che la stampante sia accesa e collegata; su Windows che la porta USB sia quella giusta.');
+    }
+  } catch (e) {
+    add(false, 'Errore diagnostica', e.message);
+  }
+  return { results };
+});
+
 ipcMain.handle('get-settings', () => loadSettings());
 ipcMain.handle('save-settings', (_e, obj) => saveSettings(obj));
 ipcMain.handle('reset-settings', () => {

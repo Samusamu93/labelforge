@@ -255,11 +255,24 @@ function updatePrintPreview() {
 
 async function testConnection() {
   const box = el('connStatus');
-  box.style.color = '#cbd5e1';
+  box.style.color = '#94a3b8';
   box.textContent = 'Verifica in corso...';
   const r = await window.zebra.testConnection(getConnection());
-  box.style.color = r.ok ? '#4ade80' : '#f87171';
+  box.style.color = r.ok ? '#16a34a' : '#dc2626';
   box.textContent = (r.ok ? '✓ ' : '✗ ') + (r.ok ? r.message : (r.error || 'errore'));
+}
+
+async function runDiagnostics() {
+  const box = el('diagResults');
+  box.innerHTML = '<span style="color:var(--muted);font-size:12px;">Diagnostica in corso...</span>';
+  const res = await window.zebra.diagnose(getConnection());
+  const rows = (res && res.results) || [];
+  if (!rows.length) { box.innerHTML = ''; return; }
+  box.innerHTML = rows.map((r) =>
+    `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border:1px solid var(--border);border-radius:7px;margin-bottom:6px;background:var(--card);">
+      <span style="font-size:14px;">${r.ok ? '✅' : '❌'}</span>
+      <div style="font-size:12px;"><b>${r.label}</b><br><span style="color:var(--muted);">${r.detail}</span></div>
+    </div>`).join('');
 }
 
 async function exportTemplate() {
@@ -483,6 +496,7 @@ function openEditor(raw) {
   editing = JSON.parse(JSON.stringify(raw));
   editorSel = null; undoStack = []; redoStack = [];
   el('edName').value = (current && current.file ? current.file.replace('.json', '') : editing.name) || 'nuovo-modello';
+  if (el('edTitle')) el('edTitle').textContent = current ? ('Modifica: ' + (current.name || el('edName').value)) : 'Nuovo modello';
   refreshEditorUI();
   updateUndoButtons();
   setMode('editor');
@@ -893,6 +907,7 @@ async function init() {
   el('exportTplBtn').addEventListener('click', exportTemplate);
   el('importTplBtn').addEventListener('click', importTemplate);
   el('testConnBtn').addEventListener('click', testConnection);
+  el('diagBtn').addEventListener('click', runDiagnostics);
   el('importCsvBtn').addEventListener('click', importCsv);
   el('csvTemplateBtn').addEventListener('click', downloadCsvTemplate);
   el('undoBtn').addEventListener('click', undo);
@@ -959,6 +974,7 @@ async function init() {
   el('gridStep').addEventListener('change', () => { editorGrid.step = Number(el('gridStep').value); window.zebra.saveSettings({ gridStep: editorGrid.step }); drawEditorCanvas(); });
 
   // Proprietà editor → anteprima live
+  el('edName').addEventListener('input', () => { if (el('edTitle')) el('edTitle').textContent = 'Modifica: ' + (el('edName').value || 'senza nome'); });
   ['edName', 'edDesc', 'edW', 'edH', 'edDpi', 'edTear', 'edLang'].forEach((id) =>
     el(id).addEventListener('input', debounce(() => { readEditorIntoDraft(); updateEditorPreview(); })));
 
