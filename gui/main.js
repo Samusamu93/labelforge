@@ -159,7 +159,7 @@ function listWindowsPrinters() {
   });
 }
 
-async function doPrint({ file, data, copies, connection, enabledIndices, multiField, multiItems, rows }) {
+async function doPrint({ file, data, copies, connection, enabledIndices, multiField, multiItems, rows, darkness, speed }) {
   const template = loadTemplateForPrint(file);
   const mult = Number(copies) || 1;
 
@@ -183,6 +183,8 @@ async function doPrint({ file, data, copies, connection, enabledIndices, multiFi
 
   const opts = {};
   if (Array.isArray(enabledIndices)) opts.enabledIndices = enabledIndices;
+  if (darkness !== undefined && darkness !== '' && darkness !== null) opts.darkness = darkness;
+  if (speed !== undefined && speed !== '' && speed !== null) opts.speed = speed;
   const zpl = buildLabel(template, dataList, opts);
 
   if (connection.type === 'printer') {

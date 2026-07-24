@@ -18,6 +18,9 @@ let tplFilter = '';        // filtro ricerca template
 let history = [];          // storico stampe
 let undoStack = [];        // editor: stati precedenti
 let redoStack = [];        // editor: stati rifatti
+let defaultCopies = 1;     // copie predefinite (impostazioni)
+let printDarkness = '';    // intensità stampa (~SD) globale
+let printSpeed = '';       // velocità stampa (^PR) globale
 
 function fillPh(str, data) {
   if (typeof str !== 'string') return '';
@@ -183,6 +186,55 @@ function applyTheme(t) {
   const b = el('themeBtn'); if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
 }
 
+// Applica le impostazioni salvate ai controlli e alle variabili globali.
+function applySettings(s) {
+  applyTheme(s.theme || 'light');
+  if (typeof s.autoprint === 'boolean') el('autoprint').checked = s.autoprint;
+  defaultCopies = Number(s.defaultCopies) || 1;
+  printDarkness = (s.darkness === undefined || s.darkness === null) ? '' : s.darkness;
+  printSpeed = (s.speed === undefined || s.speed === null) ? '' : s.speed;
+  editorGrid.show = s.gridShow !== false;
+  editorGrid.snap = s.gridSnap !== false;
+  editorGrid.step = Number(s.gridStep) || 0.5;
+  // sincronizza i controlli inline dell'anteprima
+  if (el('chkGrid')) el('chkGrid').checked = editorGrid.show;
+  if (el('chkSnap')) el('chkSnap').checked = editorGrid.snap;
+  if (el('gridStep')) el('gridStep').value = String(editorGrid.step);
+}
+
+// Popola i campi del pannello Impostazioni dai valori correnti.
+function fillSettingsModal() {
+  el('setTheme').value = document.body.classList.contains('dark') ? 'dark' : 'light';
+  el('setAutoprint').checked = el('autoprint').checked;
+  el('setCopies').value = defaultCopies || 1;
+  el('setDarkness').value = printDarkness === '' ? '' : printDarkness;
+  el('setSpeed').value = printSpeed === '' ? '' : printSpeed;
+  el('setGrid').checked = editorGrid.show;
+  el('setSnap').checked = editorGrid.snap;
+  el('setStep').value = String(editorGrid.step);
+}
+
+// Legge il pannello, aggiorna variabili + controlli e salva.
+function commitSettings() {
+  const theme = el('setTheme').value;
+  applyTheme(theme);
+  el('autoprint').checked = el('setAutoprint').checked;
+  defaultCopies = Math.max(1, Number(el('setCopies').value) || 1);
+  printDarkness = el('setDarkness').value === '' ? '' : Math.max(0, Math.min(30, Number(el('setDarkness').value)));
+  printSpeed = el('setSpeed').value === '' ? '' : Math.max(1, Math.min(6, Number(el('setSpeed').value)));
+  editorGrid.show = el('setGrid').checked;
+  editorGrid.snap = el('setSnap').checked;
+  editorGrid.step = Number(el('setStep').value) || 0.5;
+  if (el('chkGrid')) el('chkGrid').checked = editorGrid.show;
+  if (el('chkSnap')) el('chkSnap').checked = editorGrid.snap;
+  if (el('gridStep')) el('gridStep').value = String(editorGrid.step);
+  window.zebra.saveSettings({
+    theme, autoprint: el('autoprint').checked, defaultCopies, darkness: printDarkness, speed: printSpeed,
+    gridShow: editorGrid.show, gridSnap: editorGrid.snap, gridStep: editorGrid.step,
+  });
+  if (el('editorView').style.display !== 'none') drawEditorCanvas();
+}
+
 function updatePrintPreview() {
   if (!rawTemplate) return;
   let data = collectData();
@@ -243,6 +295,7 @@ async function doPrint() {
     const payload = {
       file: current.file, data, copies: el('copies').value, connection: getConnection(),
       enabledIndices: collectEnabledIndices(), rows: importedRows,
+      darkness: printDarkness, speed: printSpeed,
     };
     const res = await window.zebra.print(payload);
     el('printBtn').disabled = false;
@@ -261,6 +314,7 @@ async function doPrint() {
   const payload = {
     file: current.file, data, copies: el('copies').value, connection: getConnection(),
     enabledIndices: collectEnabledIndices(), multiField: multi ? multi.field : null, multiItems: multi ? multi.items : null,
+    darkness: printDarkness, speed: printSpeed,
   };
   const res = await window.zebra.print(payload);
   el('printBtn').disabled = false;
@@ -346,6 +400,7 @@ async function selectTemplate(file) {
   renderFields(current);
   renderElementsToggle(current);
   renderTemplateList();
+  el('copies').value = defaultCopies || 1;
   updatePrintPreview();
   window.zebra.saveSettings({ lastTemplate: file });
 }
@@ -740,7 +795,7 @@ async function init() {
   if (settings.connType) el('connType').value = settings.connType;
   if (settings.ip) el('ipInput').value = settings.ip;
   if (settings.usb) el('usbInput').value = settings.usb;
-  if (typeof settings.autoprint === 'boolean') el('autoprint').checked = settings.autoprint;
+  applySettings(settings);
 
   // Template
   await reloadTemplates();
@@ -776,12 +831,19 @@ async function init() {
   // Ricerca template
   el('tplSearch').addEventListener('input', () => { tplFilter = el('tplSearch').value; renderTemplateList(); });
 
-  // Tema chiaro/scuro
-  applyTheme(settings.theme || 'light');
+  // Tema chiaro/scuro (toggle rapido)
   el('themeBtn').addEventListener('click', () => {
     const nt = document.body.classList.contains('dark') ? 'light' : 'dark';
     applyTheme(nt); window.zebra.saveSettings({ theme: nt });
   });
+
+  // Pannello Impostazioni
+  const showSettings = (v) => { if (v) fillSettingsModal(); el('settingsModal').style.display = v ? 'flex' : 'none'; };
+  el('settingsBtn').addEventListener('click', () => showSettings(true));
+  el('settingsClose').addEventListener('click', () => showSettings(false));
+  el('settingsModal').addEventListener('click', (e) => { if (e.target === el('settingsModal')) showSettings(false); });
+  ['setTheme', 'setAutoprint', 'setCopies', 'setDarkness', 'setSpeed', 'setGrid', 'setSnap', 'setStep']
+    .forEach((id) => el(id).addEventListener('change', commitSettings));
 
   // Legenda scorciatoie
   const showHelp = (v) => { el('helpModal').style.display = v ? 'flex' : 'none'; };
@@ -807,9 +869,9 @@ async function init() {
   el('addFieldMetaBtn').addEventListener('click', () => addFieldMetaRow('', { type: 'select', options: [] }));
 
   // Controlli griglia / snap dell'anteprima interattiva
-  el('chkGrid').addEventListener('change', () => { editorGrid.show = el('chkGrid').checked; drawEditorCanvas(); });
-  el('chkSnap').addEventListener('change', () => { editorGrid.snap = el('chkSnap').checked; });
-  el('gridStep').addEventListener('change', () => { editorGrid.step = Number(el('gridStep').value); drawEditorCanvas(); });
+  el('chkGrid').addEventListener('change', () => { editorGrid.show = el('chkGrid').checked; window.zebra.saveSettings({ gridShow: editorGrid.show }); drawEditorCanvas(); });
+  el('chkSnap').addEventListener('change', () => { editorGrid.snap = el('chkSnap').checked; window.zebra.saveSettings({ gridSnap: editorGrid.snap }); });
+  el('gridStep').addEventListener('change', () => { editorGrid.step = Number(el('gridStep').value); window.zebra.saveSettings({ gridStep: editorGrid.step }); drawEditorCanvas(); });
 
   // Proprietà editor → anteprima live
   ['edName', 'edDesc', 'edW', 'edH', 'edDpi', 'edTear', 'edLang'].forEach((id) =>

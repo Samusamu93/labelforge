@@ -165,6 +165,7 @@
     <aside class="sidebar">
       <div class="sidehead">
         <h1>🏷️ LabelForge</h1>
+        <button class="icon-btn" id="settingsBtn" title="Impostazioni">⚙️</button>
         <button class="icon-btn" id="helpBtn" title="Scorciatoie da tastiera">⌨️</button>
         <button class="icon-btn" id="themeBtn" title="Tema chiaro/scuro">🌙</button>
       </div>
@@ -318,6 +319,37 @@
         <div class="preview-frame" id="previewFrame"></div>
         <div class="preview-note" id="previewNote"></div>
         <div class="preview-note" id="previewHint" style="display:none;">Clicca un elemento per selezionarlo, trascinalo per spostarlo, usa la maniglia in basso a destra per ridimensionarlo.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Impostazioni -->
+  <div id="settingsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:22px 26px; width:460px; max-width:92vw; max-height:88vh; overflow:auto; box-shadow:0 10px 40px rgba(0,0,0,.3);">
+      <div style="display:flex; align-items:center; margin-bottom:14px;">
+        <h2 style="margin:0; flex:1; font-size:17px;">⚙️ Impostazioni</h2>
+        <button class="icon-btn" id="settingsClose" title="Chiudi" style="font-size:18px;">✕</button>
+      </div>
+
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:6px 0 8px;">Aspetto</h3>
+      <div class="field"><label>Tema</label>
+        <select id="setTheme"><option value="light">Chiaro</option><option value="dark">Scuro</option></select>
+      </div>
+
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Stampa</h3>
+      <label class="checkbox" style="margin-bottom:10px;"><input type="checkbox" id="setAutoprint" /> Stampa automatica dopo la scansione</label>
+      <div class="row">
+        <div class="field"><label>Copie predefinite</label><input type="number" id="setCopies" min="1" value="1" /></div>
+        <div class="field"><label>Intensità (0–30)</label><input type="number" id="setDarkness" min="0" max="30" placeholder="auto" /></div>
+        <div class="field"><label>Velocità (1–6)</label><input type="number" id="setSpeed" min="1" max="6" placeholder="auto" /></div>
+      </div>
+      <p class="mini" style="color:var(--muted);margin:2px 0 0;">Intensità/velocità vuote = usa le impostazioni della stampante o del modello. Valgono per lo ZPL.</p>
+
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Editor</h3>
+      <label class="checkbox"><input type="checkbox" id="setGrid" /> Mostra griglia</label>
+      <label class="checkbox" style="margin:6px 0;"><input type="checkbox" id="setSnap" /> Aggancio alla griglia (snap)</label>
+      <div class="field" style="max-width:160px;"><label>Passo griglia (mm)</label>
+        <select id="setStep"><option value="0.5">0,5</option><option value="1">1</option><option value="2">2</option><option value="5">5</option></select>
       </div>
     </div>
   </div>
