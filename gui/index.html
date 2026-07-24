@@ -175,27 +175,9 @@
         <button id="modeEditor">Editor</button>
       </div>
 
-      <h3>Connessione</h3>
-      <label>Metodo</label>
-      <select id="connType">
-        <option value="printer">Stampante Windows</option>
-        <option value="ip">Rete (IP)</option>
-        <option value="usb">Porta USB</option>
-      </select>
-      <div id="wrapPrinter">
-        <label>Stampante</label>
-        <select id="printerSelect"></select>
-      </div>
-      <div id="wrapIp" style="display:none;">
-        <label>Indirizzo IP</label>
-        <input type="text" id="ipInput" placeholder="192.168.1.50" />
-      </div>
-      <div id="wrapUsb" style="display:none;">
-        <label>Porta USB</label>
-        <input type="text" id="usbInput" placeholder="USB001" />
-      </div>
-      <button class="ghost" id="testConnBtn" style="width:100%;">🔌 Prova connessione</button>
-      <div id="connStatus" style="font-size:12px; margin-top:8px;"></div>
+      <h3>Stampante</h3>
+      <div id="connSummary" style="font-size:13px; color:#e5e7eb; background:#1f2937; border:1px solid #374151; border-radius:7px; padding:8px 10px; margin-bottom:8px;">—</div>
+      <button class="ghost" id="openSettingsBtn" style="width:100%;">⚙️ Connessione e impostazioni</button>
 
       <h3>Modelli etichetta</h3>
       <input type="text" class="side-search" id="tplSearch" placeholder="🔎 Cerca modello..." />
@@ -331,7 +313,21 @@
         <button class="icon-btn" id="settingsClose" title="Chiudi" style="font-size:18px;">✕</button>
       </div>
 
-      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:6px 0 8px;">Aspetto</h3>
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:6px 0 8px;">Connessione</h3>
+      <div class="field"><label>Metodo</label>
+        <select id="connType">
+          <option value="printer">Stampante Windows</option>
+          <option value="ip">Rete (IP)</option>
+          <option value="usb">Porta USB</option>
+        </select>
+      </div>
+      <div class="field" id="wrapPrinter"><label>Stampante</label><select id="printerSelect"></select></div>
+      <div class="field" id="wrapIp" style="display:none;"><label>Indirizzo IP</label><input type="text" id="ipInput" placeholder="192.168.1.50" /></div>
+      <div class="field" id="wrapUsb" style="display:none;"><label>Porta USB</label><input type="text" id="usbInput" placeholder="USB001" /></div>
+      <button class="ghost" id="testConnBtn">🔌 Prova connessione</button>
+      <div id="connStatus" style="font-size:12px; margin-top:8px;"></div>
+
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Aspetto</h3>
       <div class="field"><label>Tema</label>
         <select id="setTheme"><option value="light">Chiaro</option><option value="dark">Scuro</option></select>
       </div>

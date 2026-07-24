@@ -774,6 +774,16 @@ function onConnTypeChange() {
   el('wrapIp').style.display = type === 'ip' ? 'block' : 'none';
   el('wrapUsb').style.display = type === 'usb' ? 'block' : 'none';
   window.zebra.saveSettings({ connType: type });
+  updateConnSummary();
+}
+
+// Riepilogo compatto della connessione mostrato nella barra laterale.
+function updateConnSummary() {
+  const box = el('connSummary'); if (!box) return;
+  const type = el('connType').value;
+  if (type === 'printer') box.textContent = '🖨️ ' + (el('printerSelect').value || '(nessuna stampante)');
+  else if (type === 'ip') box.textContent = '🌐 ' + (el('ipInput').value || 'IP non impostato') + ':9100';
+  else box.textContent = '🔌 USB ' + (el('usbInput').value || '(porta?)');
 }
 
 async function reloadTemplates() {
@@ -806,9 +816,9 @@ async function init() {
 
   // Eventi
   el('connType').addEventListener('change', onConnTypeChange);
-  el('printerSelect').addEventListener('change', () => window.zebra.saveSettings({ printer: el('printerSelect').value }));
-  el('ipInput').addEventListener('change', () => window.zebra.saveSettings({ ip: el('ipInput').value.trim() }));
-  el('usbInput').addEventListener('change', () => window.zebra.saveSettings({ usb: el('usbInput').value.trim() }));
+  el('printerSelect').addEventListener('change', () => { window.zebra.saveSettings({ printer: el('printerSelect').value }); updateConnSummary(); });
+  el('ipInput').addEventListener('change', () => { window.zebra.saveSettings({ ip: el('ipInput').value.trim() }); updateConnSummary(); });
+  el('usbInput').addEventListener('change', () => { window.zebra.saveSettings({ usb: el('usbInput').value.trim() }); updateConnSummary(); });
   el('autoprint').addEventListener('change', () => window.zebra.saveSettings({ autoprint: el('autoprint').checked }));
   el('printBtn').addEventListener('click', doPrint);
 
@@ -840,6 +850,7 @@ async function init() {
   // Pannello Impostazioni
   const showSettings = (v) => { if (v) fillSettingsModal(); el('settingsModal').style.display = v ? 'flex' : 'none'; };
   el('settingsBtn').addEventListener('click', () => showSettings(true));
+  el('openSettingsBtn').addEventListener('click', () => showSettings(true));
   el('settingsClose').addEventListener('click', () => showSettings(false));
   el('settingsModal').addEventListener('click', (e) => { if (e.target === el('settingsModal')) showSettings(false); });
   ['setTheme', 'setAutoprint', 'setCopies', 'setDarkness', 'setSpeed', 'setGrid', 'setSnap', 'setStep']
@@ -896,6 +907,7 @@ async function init() {
   }));
 
   onConnTypeChange();
+  updateConnSummary();
 }
 
 init();
