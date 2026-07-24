@@ -1,7 +1,7 @@
-name: Build Windows EXE
+name: Build apps
 
-# Compila l'eseguibile Windows:
-# - ad ogni tag "v*" (es. v1.0.0) e lo allega alla Release
+# Compila l'app per Windows, Linux e macOS:
+# - ad ogni tag "v*" (es. v1.0.0) e allega gli archivi alla Release
 # - manualmente dalla scheda Actions (workflow_dispatch)
 on:
   push:
@@ -14,7 +14,23 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            name: win-x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            name: linux-x64
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+            name: mac-arm64
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,20 +44,25 @@ jobs:
         run: npm install
 
       - name: Package (electron-packager)
-        run: npm run pack:exe
+        run: npx electron-packager . "LabelForge" --platform=${{ matrix.platform }} --arch=${{ matrix.arch }} --out=dist-app --overwrite
 
-      - name: Zip build
-        run: Compress-Archive -Path "dist-app/*" -DestinationPath "LabelForge-win-x64.zip"
+      - name: Archive (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
+        run: Compress-Archive -Path "dist-app/*" -DestinationPath "LabelForge-${{ matrix.name }}.zip"
+
+      - name: Archive (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: cd dist-app && zip -r "../LabelForge-${{ matrix.name }}.zip" . && cd ..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LabelForge-win-x64
-          path: LabelForge-win-x64.zip
+          name: LabelForge-${{ matrix.name }}
+          path: LabelForge-${{ matrix.name }}.zip
 
       - name: Attach to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: LabelForge-win-x64.zip
+          files: LabelForge-${{ matrix.name }}.zip

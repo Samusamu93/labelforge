@@ -80,14 +80,20 @@ In alternativa un installer con `npm run dist` (electron‑builder; su Windows p
 
 ### 🤖 Build automatica su GitHub
 
-Il workflow [`build.yml`](.github/workflows/build.yml) compila l'exe su un runner Windows.
-Pubblica un tag `vX.Y.Z` per generare una **Release** con lo zip allegato, oppure lancialo dalla
+Il workflow [`build.yml`](.github/workflows/build.yml) compila l'app per **Windows, Linux e macOS**.
+Pubblica un tag `vX.Y.Z` per generare una **Release** con i tre zip allegati, oppure lancialo dalla
 scheda **Actions**:
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
+
+## 🤝 Contribuire
+
+I contributi sono benvenuti — vedi [CONTRIBUTING.md](CONTRIBUTING.md). Apri una issue (ci sono i
+modelli) prima di modifiche importanti. L'app impacchettata non è firmata, quindi Windows SmartScreen
+può avvisare al primo avvio; firma e auto‑aggiornamento sono opzionali.
 
 ## 🧩 Template
 
