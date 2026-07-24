@@ -10,7 +10,7 @@ Design labels visually, fill fields (or scan them), and print over network or US
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)](#-requirements)
 [![Electron](https://img.shields.io/badge/Electron-31-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![Build](https://github.com/Samusamu93/labelforge/actions/workflows/build.yml/badge.svg)](https://github.com/Samusamu93/labelforge/actions/workflows/build.yml)
+[![Build](https://github.com/dextsamu/labelforge/actions/workflows/build.yml/badge.svg)](https://github.com/dextsamu/labelforge/actions/workflows/build.yml)
 
 **🇬🇧 English** · [🇮🇹 Italiano](README.it.md)
 

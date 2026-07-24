@@ -6,7 +6,7 @@ Thanks for your interest in improving LabelForge! Contributions are welcome.
 ## Getting started
 
 ```bash
-git clone https://github.com/Samusamu93/labelforge.git
+git clone https://github.com/dextsamu/labelforge.git
 cd labelforge
 npm install
 npm start        # launch the GUI
@@ -51,7 +51,7 @@ Grazie per l'interesse! I contributi sono benvenuti.
 ## Avvio rapido
 
 ```bash
-git clone https://github.com/Samusamu93/labelforge.git
+git clone https://github.com/dextsamu/labelforge.git
 cd labelforge
 npm install
 npm start
