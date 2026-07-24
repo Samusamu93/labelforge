@@ -1,0 +1,15 @@
+{
+  "name": "box-102x51",
+  "description": "Etichetta 102x51mm (4x2 pollici) con riquadro, testo e barcode",
+  "dpi": 203,
+  "width_mm": 102,
+  "height_mm": 51,
+  "tear_off": 30,
+  "elements": [
+    { "type": "box", "x_mm": 1, "y_mm": 1, "width_mm": 100, "height_mm": 49, "thickness_mm": 0.4 },
+    { "type": "text", "x_mm": 5, "y_mm": 4, "font": "0", "height_mm": 5, "width_mm": 5, "text": "{{title}}" },
+    { "type": "text", "x_mm": 5, "y_mm": 12, "font": "0", "height_mm": 3, "width_mm": 3, "text": "{{subtitle}}" },
+    { "type": "text", "x_mm": 5, "y_mm": 17, "font": "0", "height_mm": 2.5, "width_mm": 2.5, "text": "{{note}}" },
+    { "type": "barcode128", "x_mm": 5, "y_mm": 30, "bar_height_mm": 14, "text": "{{code}}" }
+  ]
+}

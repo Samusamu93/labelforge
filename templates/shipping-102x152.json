@@ -1,0 +1,19 @@
+{
+  "name": "shipping-102x152",
+  "description": "Etichetta spedizione 102x152mm (4x6 pollici) mittente/destinatario + barcode",
+  "dpi": 203,
+  "width_mm": 102,
+  "height_mm": 152,
+  "tear_off": 30,
+  "elements": [
+    { "type": "text", "x_mm": 5, "y_mm": 4, "font": "0", "height_mm": 4, "width_mm": 4, "text": "MITTENTE:" },
+    { "type": "text", "x_mm": 5, "y_mm": 9, "font": "0", "height_mm": 3, "width_mm": 3, "text": "{{mittente}}" },
+    { "type": "line", "x_mm": 5, "y_mm": 20, "width_mm": 92, "height_mm": 0, "thickness_mm": 0.4 },
+    { "type": "text", "x_mm": 5, "y_mm": 24, "font": "0", "height_mm": 5, "width_mm": 5, "text": "DESTINATARIO:" },
+    { "type": "text", "x_mm": 5, "y_mm": 30, "font": "0", "height_mm": 4, "width_mm": 4, "text": "{{destinatario}}" },
+    { "type": "text", "x_mm": 5, "y_mm": 37, "font": "0", "height_mm": 3.5, "width_mm": 3.5, "text": "{{indirizzo}}" },
+    { "type": "text", "x_mm": 5, "y_mm": 43, "font": "0", "height_mm": 3.5, "width_mm": 3.5, "text": "{{citta_cap}}" },
+    { "type": "text", "x_mm": 5, "y_mm": 60, "font": "0", "height_mm": 3, "width_mm": 3, "text": "Ordine: {{ordine_id}}" },
+    { "type": "barcode128", "x_mm": 5, "y_mm": 100, "bar_height_mm": 25, "text": "{{ordine_id}}" }
+  ]
+}

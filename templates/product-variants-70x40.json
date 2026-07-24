@@ -1,0 +1,27 @@
+{
+  "name": "product-variants-70x40",
+  "description": "Esempio 70x40mm: nome prodotto, categoria (menu a tendina) e taglie (lista con quantità) + SKU come testo, barcode e QR / Example: product name, category (dropdown) and sizes (quantity list) + SKU as text, barcode and QR",
+  "dpi": 203,
+  "width_mm": 70,
+  "height_mm": 40,
+  "tear_off": 30,
+  "field_meta": {
+    "categoria": {
+      "label": "Categoria / Category",
+      "type": "select",
+      "options": ["STANDARD", "PREMIUM", "OUTLET"]
+    },
+    "taglia": {
+      "label": "Taglie (quantità) / Sizes (qty)",
+      "type": "multi-qty",
+      "options": ["XS", "S", "M", "L", "XL"]
+    }
+  },
+  "elements": [
+    { "label": "Nome prodotto", "type": "text", "x_mm": 3, "y_mm": 2, "font": "0", "height_mm": 4, "width_mm": 4, "text": "{{prodotto}}" },
+    { "label": "Categoria", "type": "text", "x_mm": 3, "y_mm": 8, "font": "0", "height_mm": 3, "width_mm": 3, "text": "Cat: {{categoria}}  Taglia: {{taglia}}" },
+    { "label": "SKU (testo)", "type": "text", "x_mm": 3, "y_mm": 13.5, "font": "0", "height_mm": 3, "width_mm": 3, "text": "SKU: {{sku}}" },
+    { "label": "Codice a barre (Code128)", "type": "barcode128", "x_mm": 3, "y_mm": 19, "bar_height_mm": 12, "module_width": 2, "show_text": false, "text": "{{sku}}" },
+    { "label": "QR code", "type": "qrcode", "x_mm": 48, "y_mm": 16, "magnification": 4, "enabled": false, "text": "{{sku}}" }
+  ]
+}

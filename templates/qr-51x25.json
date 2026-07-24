@@ -1,0 +1,13 @@
+{
+  "name": "qr-51x25",
+  "description": "Etichetta 51x25mm (2x1 pollici) con QR code + testo",
+  "dpi": 203,
+  "width_mm": 51,
+  "height_mm": 25,
+  "tear_off": 30,
+  "elements": [
+    { "type": "qrcode", "x_mm": 2, "y_mm": 2, "magnification": 4, "text": "{{qrdata}}" },
+    { "type": "text", "x_mm": 22, "y_mm": 3, "font": "0", "height_mm": 3, "width_mm": 3, "text": "{{title}}" },
+    { "type": "text", "x_mm": 22, "y_mm": 9, "font": "0", "height_mm": 2.2, "width_mm": 2.2, "text": "{{subtitle}}" }
+  ]
+}

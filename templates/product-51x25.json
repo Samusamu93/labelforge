@@ -1,0 +1,13 @@
+{
+  "name": "product-51x25",
+  "description": "Etichetta prodotto 51x25mm (2x1 pollici) con codice a barre",
+  "dpi": 203,
+  "width_mm": 51,
+  "height_mm": 25,
+  "tear_off": 30,
+  "elements": [
+    { "type": "text", "x_mm": 3, "y_mm": 1.5, "font": "0", "height_mm": 3.2, "width_mm": 3.2, "text": "{{title}}" },
+    { "type": "text", "x_mm": 3, "y_mm": 6.5, "font": "0", "height_mm": 2.2, "width_mm": 2.2, "text": "{{subtitle}}" },
+    { "type": "barcode128", "x_mm": 3, "y_mm": 11, "bar_height_mm": 8, "text": "{{code}}" }
+  ]
+}

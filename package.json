@@ -1,0 +1,44 @@
+{
+  "name": "labelforge",
+  "version": "1.0.0",
+  "description": "Stampa etichette ZPL su stampanti Zebra (es. ZD410) via rete (IP) o USB/Windows, con template dinamici, editor visuale e interfaccia desktop.",
+  "main": "gui/main.js",
+  "type": "commonjs",
+  "bin": {
+    "zlabel": "./cli.js"
+  },
+  "scripts": {
+    "start": "electron .",
+    "gui": "electron .",
+    "cli": "node cli.js",
+    "dist": "electron-builder --win",
+    "dist:portable": "electron-builder --win portable",
+    "pack:exe": "electron-packager . \"LabelForge\" --platform=win32 --arch=x64 --out=dist-app --overwrite --app-version=1.0.0"
+  },
+  "keywords": ["zebra", "zd410", "zpl", "label", "printer", "etichette", "barcode", "qrcode", "electron"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "@electron/packager": "^18.3.5"
+  },
+  "build": {
+    "appId": "com.example.labelforge",
+    "productName": "LabelForge",
+    "files": ["gui/**/*", "lib/**/*", "scripts/**/*", "templates/**/*", "cli.js"],
+    "extraResources": [
+      { "from": "templates", "to": "templates" },
+      { "from": "scripts", "to": "scripts" }
+    ],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LabelForge"
+    }
+  }
+}

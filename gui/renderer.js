@@ -1,0 +1,584 @@
+'use strict';
+
+const el = (id) => document.getElementById(id);
+const debounce = (fn, ms = 120) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+function humanize(name) { const s = String(name).replace(/[_\-.]/g, ' ').trim(); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+let templates = [];        // riepiloghi
+let current = null;        // riepilogo selezionato
+let rawTemplate = null;    // JSON completo del template selezionato (per anteprima/stampa)
+let editing = null;        // bozza in modifica (editor)
+let scanFieldName = null;
+let settings = {};
+let editorSel = null;      // indice elemento selezionato nell'editor
+let editorGrid = { show: true, snap: true, step: 0.5 };
+
+/* ============================ STAMPA ============================ */
+
+function pickScanField(fields) {
+  const textFields = fields.filter((f) => !f.type || f.type === 'text');
+  const priority = textFields.find((f) => /codice|cf|barcode|qr|matricola|seriale|ean/i.test(f.name));
+  return (priority || textFields[textFields.length - 1] || null)?.name || null;
+}
+function fieldLabel(field) { return field.label || humanize(field.name); }
+
+function renderFields(tpl) {
+  const container = el('fields');
+  container.innerHTML = '';
+  scanFieldName = pickScanField(tpl.fields);
+
+  tpl.fields.forEach((field) => {
+    const isScan = field.name === scanFieldName;
+    const wrap = document.createElement('div');
+    wrap.className = 'field' + (isScan ? ' scan' : '');
+    const label = document.createElement('label');
+    label.textContent = fieldLabel(field);
+    if (isScan) { const b = document.createElement('span'); b.className = 'scan-badge'; b.textContent = 'Scanner'; label.appendChild(b); }
+    wrap.appendChild(label);
+
+    if (field.type === 'multi-qty' && Array.isArray(field.options)) {
+      const tubes = document.createElement('div'); tubes.className = 'tubes';
+      field.options.forEach((opt) => {
+        const row = document.createElement('div'); row.className = 'tube-row';
+        const name = document.createElement('span'); name.className = 'tube-name tube-' + String(opt).toLowerCase(); name.textContent = opt;
+        const minus = document.createElement('button'); minus.type = 'button'; minus.className = 'qbtn'; minus.textContent = '−';
+        const qty = document.createElement('input'); qty.type = 'number'; qty.min = '0'; qty.value = '0'; qty.className = 'qty'; qty.dataset.multi = field.name; qty.dataset.value = opt;
+        const plus = document.createElement('button'); plus.type = 'button'; plus.className = 'qbtn'; plus.textContent = '+';
+        minus.onclick = () => { qty.value = Math.max(0, (Number(qty.value) || 0) - 1); updatePrintPreview(); };
+        plus.onclick = () => { qty.value = (Number(qty.value) || 0) + 1; updatePrintPreview(); };
+        qty.oninput = updatePrintPreview;
+        row.append(name, minus, qty, plus); tubes.appendChild(row);
+      });
+      wrap.appendChild(tubes);
+    } else if (field.type === 'select' && Array.isArray(field.options)) {
+      const sel = document.createElement('select');
+      field.options.forEach((opt) => { const o = document.createElement('option'); o.value = opt; o.textContent = opt; sel.appendChild(o); });
+      sel.id = 'f_' + field.name; sel.dataset.field = field.name; sel.oninput = updatePrintPreview;
+      wrap.appendChild(sel);
+    } else {
+      const input = document.createElement('input'); input.type = 'text'; input.autocomplete = 'off';
+      input.id = 'f_' + field.name; input.dataset.field = field.name;
+      input.addEventListener('keydown', onFieldKeydown);
+      input.addEventListener('input', updatePrintPreview);
+      wrap.appendChild(input);
+    }
+    container.appendChild(wrap);
+  });
+
+  if (scanFieldName) { const s = el('f_' + scanFieldName); if (s) setTimeout(() => s.focus(), 50); }
+}
+
+function renderElementsToggle(tpl) {
+  const box = el('elementsBox'); const container = el('elements'); container.innerHTML = '';
+  const els = tpl.elements || [];
+  if (els.length === 0) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  els.forEach((e) => {
+    const item = document.createElement('label'); item.className = 'elem-item';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = e.enabledDefault; cb.dataset.index = e.index; cb.className = 'elem-cb';
+    cb.onchange = updatePrintPreview;
+    const txt = document.createElement('span'); txt.textContent = e.label;
+    const type = document.createElement('span'); type.className = 'etype'; type.textContent = e.type;
+    item.append(cb, txt, type); container.appendChild(item);
+  });
+}
+
+function onFieldKeydown(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const autoprint = el('autoprint').checked;
+  const inputs = Array.from(document.querySelectorAll('#fields input[data-field]'));
+  const idx = inputs.indexOf(e.target);
+  if (autoprint) doPrint();
+  else if (idx > -1 && idx < inputs.length - 1) inputs[idx + 1].focus();
+  else doPrint();
+}
+
+function collectData() {
+  const data = {};
+  document.querySelectorAll('#fields [data-field]').forEach((inp) => { data[inp.dataset.field] = (inp.value || '').trim(); });
+  return data;
+}
+function collectMulti() {
+  const qtys = Array.from(document.querySelectorAll('#fields .qty[data-multi]'));
+  if (qtys.length === 0) return null;
+  const field = qtys[0].dataset.multi;
+  const items = qtys.map((q) => ({ value: q.dataset.value, qty: Number(q.value) || 0 })).filter((it) => it.qty > 0);
+  return { field, items };
+}
+function collectEnabledIndices() {
+  return Array.from(document.querySelectorAll('.elem-cb')).filter((cb) => cb.checked).map((cb) => Number(cb.dataset.index));
+}
+function getConnection() {
+  const type = el('connType').value;
+  if (type === 'printer') return { type, printer: el('printerSelect').value };
+  if (type === 'ip') return { type, ip: el('ipInput').value.trim(), port: 9100 };
+  if (type === 'usb') return { type, usb: el('usbInput').value.trim() };
+  return { type };
+}
+function setStatus(kind, msg) { const s = el('status'); s.className = kind; s.textContent = msg; }
+
+function updatePrintPreview() {
+  if (!rawTemplate) return;
+  const data = collectData();
+  const multi = collectMulti();
+  if (multi) { const first = multi.items[0]; data[multi.field] = first ? first.value : (current.fields.find(f => f.name === multi.field)?.options?.[0] || ''); }
+  el('previewFrame').innerHTML = window.LabelPreview.renderPreviewSVG(rawTemplate, data, collectEnabledIndices());
+  el('previewNote').textContent = `${rawTemplate.width_mm}×${rawTemplate.height_mm} mm · ${rawTemplate.dpi || 203} dpi`;
+}
+
+async function doPrint() {
+  if (!current) return;
+  const data = collectData();
+  if (scanFieldName && !data[scanFieldName]) { setStatus('err', `Compila il campo "${humanize(scanFieldName)}".`); el('f_' + scanFieldName)?.focus(); return; }
+  const multi = collectMulti();
+  if (multi && multi.items.length === 0) { setStatus('err', 'Imposta almeno una provetta con quantità maggiore di 0.'); return; }
+  const mult = Number(el('copies').value) || 1;
+  const total = multi ? multi.items.reduce((s, it) => s + it.qty, 0) * mult : mult;
+
+  el('printBtn').disabled = true;
+  setStatus('info', `Invio in corso (${total} etichett${total === 1 ? 'a' : 'e'})...`);
+  const res = await window.zebra.print({
+    file: current.file, data, copies: el('copies').value, connection: getConnection(),
+    enabledIndices: collectEnabledIndices(), multiField: multi ? multi.field : null, multiItems: multi ? multi.items : null,
+  });
+  el('printBtn').disabled = false;
+  if (res && res.ok) {
+    setStatus('ok', `Inviate ${res.count} etichett${res.count === 1 ? 'a' : 'e'}.`);
+    if (el('autoprint').checked && scanFieldName) { const s = el('f_' + scanFieldName); if (s) { s.value = ''; s.focus(); } updatePrintPreview(); }
+  } else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
+}
+
+/* ============================ SIDEBAR / TEMPLATE ============================ */
+
+function renderTemplateList() {
+  const list = el('tplList'); list.innerHTML = '';
+  templates.forEach((t) => {
+    const b = document.createElement('button');
+    b.innerHTML = `${t.name}<br><span class="tag">${t.width_mm}×${t.height_mm}mm ${t.editable ? '· personalizzato' : '· di fabbrica'}</span>`;
+    if (current && t.file === current.file) b.classList.add('active');
+    b.onclick = () => selectTemplate(t.file);
+    list.appendChild(b);
+  });
+}
+
+async function selectTemplate(file) {
+  current = templates.find((t) => t.file === file);
+  if (!current) return;
+  rawTemplate = await window.zebra.loadTemplateRaw(file);
+  el('tplTitle').textContent = current.name;
+  el('templateDesc').textContent = `${current.width_mm}×${current.height_mm} mm — ${current.description}`;
+  renderFields(current);
+  renderElementsToggle(current);
+  renderTemplateList();
+  updatePrintPreview();
+  window.zebra.saveSettings({ lastTemplate: file });
+}
+
+/* ============================ EDITOR ============================ */
+
+function blankTemplate() {
+  return { name: 'nuovo-modello', description: '', dpi: 203, width_mm: 51, height_mm: 25, tear_off: 30,
+    field_meta: {}, elements: [{ label: 'Testo', type: 'text', x_mm: 3, y_mm: 3, font: '0', height_mm: 3, width_mm: 3, text: '{{testo}}' }] };
+}
+
+function openEditor(raw) {
+  editing = JSON.parse(JSON.stringify(raw));
+  editorSel = null;
+  el('edName').value = (current && current.file ? current.file.replace('.json', '') : editing.name) || 'nuovo-modello';
+  el('edDesc').value = editing.description || '';
+  el('edW').value = editing.width_mm; el('edH').value = editing.height_mm;
+  el('edDpi').value = String(editing.dpi || 203); el('edTear').value = editing.tear_off ?? 30;
+  renderEditorElements(); renderFieldMeta();
+  updateEditorPreview();
+  setMode('editor');
+}
+
+const ELEMENT_PROPS = {
+  text: [['text', 'Testo ({{campo}})', 'text', 'full'], ['height_mm', 'Altezza (mm)', 'number'], ['width_mm', 'Larghezza (mm)', 'number'], ['font', 'Font', 'text']],
+  barcode128: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
+  qrcode: [['text', 'Dato ({{campo}})', 'text', 'full'], ['magnification', 'Ingrandimento (1-10)', 'number']],
+  box: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
+  line: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
+};
+
+function selectElement(i) {
+  editorSel = i;
+  renderEditorElements();
+  drawEditorCanvas();
+  // porta in vista la riga selezionata
+  const row = document.querySelector(`#edElements .elrow[data-index="${i}"]`);
+  if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function renderEditorElements() {
+  const c = el('edElements'); c.innerHTML = '';
+  (editing.elements || []).forEach((elem, i) => {
+    const open = i === editorSel;
+    const row = document.createElement('div'); row.className = 'elrow' + (open ? ' open' : ''); row.dataset.index = i;
+
+    // Header (fisarmonica): click per selezionare/espandere
+    const head = document.createElement('div'); head.className = 'elhead';
+    const caret = document.createElement('span'); caret.textContent = open ? '▾' : '▸'; caret.style.cssText = 'cursor:pointer;color:var(--muted);width:14px;';
+    const title = document.createElement('span'); title.style.cssText = 'flex:1;cursor:pointer;font-weight:600;';
+    title.innerHTML = `${elem.label || elem.type} <span class="etype">${elem.type}</span>`;
+    caret.onclick = title.onclick = () => selectElement(open ? -1 : i);
+
+    const up = document.createElement('button'); up.className = 'qbtn'; up.textContent = '↑'; up.title = 'Su';
+    const dn = document.createElement('button'); dn.className = 'qbtn'; dn.textContent = '↓'; dn.title = 'Giù';
+    const del = document.createElement('button'); del.className = 'qbtn'; del.textContent = '✕'; del.title = 'Elimina'; del.style.color = 'var(--err)';
+    up.onclick = () => { readEditorIntoDraft(); if (i > 0) { [editing.elements[i - 1], editing.elements[i]] = [editing.elements[i], editing.elements[i - 1]]; editorSel = i - 1; } renderEditorElements(); drawEditorCanvas(); };
+    dn.onclick = () => { readEditorIntoDraft(); if (i < editing.elements.length - 1) { [editing.elements[i + 1], editing.elements[i]] = [editing.elements[i], editing.elements[i + 1]]; editorSel = i + 1; } renderEditorElements(); drawEditorCanvas(); };
+    del.onclick = () => { readEditorIntoDraft(); editing.elements.splice(i, 1); editorSel = null; renderEditorElements(); drawEditorCanvas(); };
+
+    head.append(caret, title, up, dn, del);
+    row.appendChild(head);
+
+    if (open) {
+      const bar = document.createElement('div'); bar.className = 'elhead'; bar.style.marginTop = '8px';
+      const typeSel = document.createElement('select');
+      ['text', 'barcode128', 'qrcode', 'box', 'line'].forEach((t) => { const o = document.createElement('option'); o.value = t; o.textContent = t; if (t === elem.type) o.selected = true; typeSel.appendChild(o); });
+      typeSel.onchange = () => { readEditorIntoDraft(); editing.elements[i].type = typeSel.value; renderEditorElements(); drawEditorCanvas(); };
+      const lbl = document.createElement('input'); lbl.type = 'text'; lbl.placeholder = 'Etichetta elemento'; lbl.value = elem.label || ''; lbl.dataset.prop = 'label'; lbl.style.flex = '1';
+      const en = document.createElement('label'); en.className = 'checkbox'; en.style.margin = '0';
+      const enc = document.createElement('input'); enc.type = 'checkbox'; enc.checked = elem.enabled !== false; enc.dataset.prop = 'enabled';
+      en.append(enc, document.createTextNode('Attivo'));
+      bar.append(typeSel, lbl, en);
+      row.appendChild(bar);
+
+      const grid = document.createElement('div'); grid.className = 'grid';
+      const common = [['x_mm', 'X (mm)', 'number'], ['y_mm', 'Y (mm)', 'number']];
+      const props = common.concat(ELEMENT_PROPS[elem.type] || []);
+      props.forEach(([prop, label, kind, span]) => {
+        const fld = document.createElement('div'); fld.className = 'fld' + (span === 'full' ? ' full' : '');
+        const l = document.createElement('label'); l.textContent = label; fld.appendChild(l);
+        let input;
+        if (kind === 'bool') {
+          input = document.createElement('select');
+          [['true', 'Sì'], ['false', 'No']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; input.appendChild(o); });
+          input.value = String(elem[prop] !== false);
+        } else {
+          input = document.createElement('input'); input.type = kind === 'number' ? 'number' : 'text'; if (kind === 'number') input.step = '0.5';
+          input.value = elem[prop] ?? '';
+        }
+        input.dataset.prop = prop;
+        fld.appendChild(input); grid.appendChild(fld);
+      });
+      row.appendChild(grid);
+      row.querySelectorAll('input, select').forEach((inp) => inp.addEventListener('input', debounce(() => { readEditorIntoDraft(); drawEditorCanvas(); })));
+    }
+    c.appendChild(row);
+  });
+}
+
+function renderFieldMeta() {
+  const c = el('edFieldMeta'); c.innerHTML = '';
+  const meta = editing.field_meta || {};
+  Object.keys(meta).forEach((name) => addFieldMetaRow(name, meta[name]));
+}
+function addFieldMetaRow(name, m) {
+  const c = el('edFieldMeta');
+  const row = document.createElement('div'); row.className = 'elrow fm-row';
+  row.innerHTML = `
+    <div class="grid" style="grid-template-columns:1fr 1fr;">
+      <div class="fld"><label>Nome campo (senza {{}})</label><input type="text" class="fm-name" value="${(name || '')}"></div>
+      <div class="fld"><label>Tipo</label><select class="fm-type">
+        <option value="select">Menu a tendina</option>
+        <option value="multi-qty">Lista con quantità (provette)</option>
+      </select></div>
+      <div class="fld full"><label>Etichetta mostrata</label><input type="text" class="fm-label" value="${(m && m.label) ? m.label : ''}"></div>
+      <div class="fld full"><label>Opzioni (una per riga)</label><textarea class="fm-options" rows="4">${(m && m.options ? m.options.join('\n') : '')}</textarea></div>
+    </div>
+    <button class="qbtn fm-del" style="color:var(--err);margin-top:6px;">✕ Rimuovi campo</button>`;
+  row.querySelector('.fm-type').value = (m && m.type) || 'select';
+  row.querySelector('.fm-del').onclick = () => { row.remove(); readEditorIntoDraft(); updateEditorPreview(); };
+  row.querySelectorAll('input, select, textarea').forEach((inp) => inp.addEventListener('input', debounce(() => { readEditorIntoDraft(); updateEditorPreview(); })));
+  c.appendChild(row);
+}
+
+// Legge un singolo elemento dell'editor (riga aperta) in un oggetto template.
+function readElementRow(row, prevType) {
+  const typeSel = row.querySelector('select');
+  const type = typeSel ? typeSel.value : prevType;
+  const obj = { type };
+  row.querySelectorAll('[data-prop]').forEach((inp) => {
+    const prop = inp.dataset.prop; const val = inp.value;
+    if (prop === 'enabled') { obj.enabled = inp.checked; return; }
+    if (prop === 'show_text') { obj.show_text = (val === 'true'); return; }
+    if (val === '') return;
+    const numeric = ['x_mm', 'y_mm', 'height_mm', 'width_mm', 'bar_height_mm', 'module_width', 'magnification', 'thickness_mm'];
+    obj[prop] = numeric.includes(prop) ? Number(val) : val;
+  });
+  if (obj.enabled === true) delete obj.enabled; // default true: non serve salvarlo
+  return obj;
+}
+
+// Legge i controlli dell'editor dentro `editing`.
+// NB: con la lista a fisarmonica solo la riga selezionata ha i campi nel DOM;
+// le altre restano quelle già presenti in `editing` (anche le posizioni cambiate col trascinamento).
+function readEditorIntoDraft() {
+  if (!editing) return;
+  editing.description = el('edDesc').value.trim();
+  editing.dpi = Number(el('edDpi').value) || 203;
+  editing.width_mm = Number(el('edW').value) || 0;
+  editing.height_mm = Number(el('edH').value) || 0;
+  const tear = el('edTear').value; editing.tear_off = tear === '' ? undefined : Number(tear);
+
+  // solo l'elemento aperto (se presente)
+  const openRow = document.querySelector('#edElements .elrow.open');
+  if (openRow && editorSel != null && editing.elements[editorSel]) {
+    const prev = editing.elements[editorSel];
+    const merged = readElementRow(openRow, prev.type);
+    // conserva la label se non modificata (input label ha data-prop="label")
+    editing.elements[editorSel] = merged;
+  }
+
+  // field_meta
+  const meta = {};
+  document.querySelectorAll('#edFieldMeta .fm-row').forEach((row) => {
+    const name = row.querySelector('.fm-name').value.trim();
+    if (!name) return;
+    const type = row.querySelector('.fm-type').value;
+    const label = row.querySelector('.fm-label').value.trim();
+    const options = row.querySelector('.fm-options').value.split(/\n/).map((s) => s.trim()).filter(Boolean);
+    meta[name] = { type, options };
+    if (label) meta[name].label = label;
+  });
+  editing.field_meta = meta;
+}
+
+function sampleData(tpl) {
+  const data = {};
+  const ph = new Set();
+  (tpl.elements || []).forEach((e) => { const s = e.text || ''; const re = /\{\{\s*([\w.\-]+)\s*\}\}/g; let m; while ((m = re.exec(s))) ph.add(m[1]); });
+  ph.forEach((name) => {
+    if (/codice|cf/i.test(name)) data[name] = 'ABC-123456';
+    else if ((tpl.field_meta || {})[name] && tpl.field_meta[name].options && tpl.field_meta[name].options[0]) data[name] = tpl.field_meta[name].options[0];
+    else data[name] = humanize(name);
+  });
+  return data;
+}
+
+function updateEditorPreview() { drawEditorCanvas(); }
+
+function snapVal(v) {
+  if (!editorGrid.snap) return Math.round(v * 10) / 10;
+  const s = editorGrid.step;
+  return Math.round(v / s) * s;
+}
+
+function gridSVG(W, H) {
+  if (!editorGrid.show) return '';
+  let g = '';
+  const minor = editorGrid.step >= 1 ? editorGrid.step : 1;
+  for (let x = 0; x <= W; x += minor) g += `<line class="gridline${x % 5 === 0 ? ' major' : ''}" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;
+  for (let y = 0; y <= H; y += minor) g += `<line class="gridline${y % 5 === 0 ? ' major' : ''}" x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;
+  return g;
+}
+
+function drawEditorCanvas() {
+  if (!editing) return;
+  const W = Number(editing.width_mm) || 50, H = Number(editing.height_mm) || 25;
+  const data = sampleData(editing);
+  const allIdx = (editing.elements || []).map((_, i) => i); // in editor mostra tutti
+  const visual = window.LabelPreview.renderPreviewSVG(editing, data, allIdx).replace('<svg ', '<svg class="visual" ');
+  const boxes = window.LabelPreview.computeBoxes(editing, data);
+
+  let ov = `<svg class="overlay" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+  ov += gridSVG(W, H);
+  boxes.forEach((b) => {
+    const w = Math.max(b.w, 2), h = Math.max(b.h, 2);
+    if (b.index === editorSel) {
+      ov += `<rect class="sel" x="${b.x}" y="${b.y}" width="${w}" height="${h}"/>`;
+      ov += `<rect class="handle" data-handle="${b.index}" x="${(b.x + w - 1.2).toFixed(2)}" y="${(b.y + h - 1.2).toFixed(2)}" width="2.4" height="2.4"/>`;
+    }
+    ov += `<rect class="hit" data-hit="${b.index}" x="${b.x}" y="${b.y}" width="${w}" height="${h}"/>`;
+  });
+  ov += `</svg>`;
+
+  el('previewFrame').innerHTML = `<div class="canvaswrap">${visual}${ov}</div>`;
+  el('previewNote').textContent = `${W}×${H} mm · ${editing.dpi || 203} dpi (dati di esempio)`;
+  attachCanvasHandlers();
+}
+
+// Restituisce l'SVG overlay attualmente nel DOM (viene ricreato ad ogni ridisegno).
+function liveOverlay() { return el('previewFrame').querySelector('svg.overlay'); }
+
+function clientToMm(evt, svg) {
+  if (!svg) return null;
+  const m = svg.getScreenCTM();
+  if (!m) return null;
+  const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+  const p = pt.matrixTransform(m.inverse());
+  return { x: p.x, y: p.y };
+}
+
+function attachCanvasHandlers() {
+  const svg = liveOverlay();
+  if (!svg) return;
+  svg.querySelectorAll('.hit').forEach((rect) => {
+    rect.addEventListener('pointerdown', (e) => startDrag(e, Number(rect.dataset.hit), 'move'));
+  });
+  const handle = svg.querySelector('.handle');
+  if (handle) handle.addEventListener('pointerdown', (e) => startDrag(e, Number(handle.dataset.handle), 'resize'));
+}
+
+function startDrag(e, index, mode) {
+  e.preventDefault(); e.stopPropagation();
+  if (editorSel !== index) selectElement(index);
+  const elem = editing.elements[index];
+  // Legge sempre dall'SVG vivo: dopo selectElement/ridisegno l'elemento cambia.
+  const start = clientToMm(e, liveOverlay());
+  if (!start) return;
+  const orig = { x: Number(elem.x_mm) || 0, y: Number(elem.y_mm) || 0 };
+
+  let raf = null;
+  const move = (ev) => {
+    const pt = clientToMm(ev, liveOverlay());
+    if (!pt) return;
+    if (mode === 'move') {
+      elem.x_mm = Math.max(0, snapVal(orig.x + (pt.x - start.x)));
+      elem.y_mm = Math.max(0, snapVal(orig.y + (pt.y - start.y)));
+    } else {
+      const w = snapVal(Math.max(1, pt.x - orig.x));
+      const h = snapVal(Math.max(1, pt.y - orig.y));
+      if (elem.type === 'text') { elem.height_mm = Math.max(1, h); elem.width_mm = Math.max(1, h); }
+      else if (elem.type === 'barcode128') { elem.bar_height_mm = Math.max(2, h); }
+      else if (elem.type === 'qrcode') { elem.magnification = Math.min(10, Math.max(1, Math.round(w / 5))); }
+      else { elem.width_mm = Math.max(1, w); elem.height_mm = Math.max(0, snapVal(pt.y - orig.y)); }
+    }
+    if (!raf) raf = requestAnimationFrame(() => { raf = null; drawEditorCanvas(); });
+  };
+  const up = () => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    renderEditorElements(); // sincronizza i campi numerici
+    drawEditorCanvas();
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+
+function setEditorStatus(kind, msg) {
+  const s = el('editorStatus'); s.className = kind; s.textContent = msg;
+  s.style.cssText = 'margin-top:12px;padding:10px 12px;border-radius:7px;font-weight:500;' +
+    (kind === 'ok' ? 'background:#dcfce7;color:#16a34a;' : kind === 'err' ? 'background:#fee2e2;color:#dc2626;' : 'background:#dbeafe;color:#2563eb;');
+}
+
+async function saveEditor(asNew) {
+  readEditorIntoDraft();
+  let name = el('edName').value.trim();
+  if (!name) { setEditorStatus('err', 'Dai un nome al modello.'); return; }
+  editing.name = name.replace(/\.json$/, '');
+  if (asNew && current && (name + '.json') === current.file) name = name + '-copia';
+  const res = await window.zebra.saveTemplate(name, editing);
+  if (res && res.ok) {
+    setEditorStatus('ok', 'Modello salvato.');
+    await reloadTemplates();
+    await selectTemplate(res.file);
+  } else setEditorStatus('err', 'Errore nel salvataggio: ' + (res?.error || '?'));
+}
+
+async function deleteEditor() {
+  if (!current) return;
+  if (!current.editable) { setEditorStatus('err', 'I modelli di fabbrica non si possono eliminare. Usa "Salva come nuovo" per crearne una versione modificabile.'); return; }
+  const res = await window.zebra.deleteTemplate(current.file);
+  if (res && res.ok) { await reloadTemplates(); if (templates[0]) await selectTemplate(templates[0].file); setMode('print'); }
+  else setEditorStatus('err', res?.error || 'Impossibile eliminare.');
+}
+
+/* ============================ MODO / INIT ============================ */
+
+function setMode(mode) {
+  const isEditor = mode === 'editor';
+  el('printView').style.display = isEditor ? 'none' : 'block';
+  el('editorView').style.display = isEditor ? 'block' : 'none';
+  el('modePrint').classList.toggle('active', !isEditor);
+  el('modeEditor').classList.toggle('active', isEditor);
+  el('previewControls').style.display = isEditor ? 'flex' : 'none';
+  el('previewHint').style.display = isEditor ? 'block' : 'none';
+  if (isEditor) { if (!editing) openEditor(rawTemplate || blankTemplate()); else updateEditorPreview(); }
+  else updatePrintPreview();
+}
+
+function onConnTypeChange() {
+  const type = el('connType').value;
+  el('wrapPrinter').style.display = type === 'printer' ? 'block' : 'none';
+  el('wrapIp').style.display = type === 'ip' ? 'block' : 'none';
+  el('wrapUsb').style.display = type === 'usb' ? 'block' : 'none';
+  window.zebra.saveSettings({ connType: type });
+}
+
+async function reloadTemplates() {
+  templates = await window.zebra.listTemplates();
+  renderTemplateList();
+}
+
+async function init() {
+  settings = await window.zebra.getSettings() || {};
+
+  // Stampanti
+  const printers = await window.zebra.listPrinters();
+  const sel = el('printerSelect');
+  printers.forEach((n) => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+  const zebra = printers.find((n) => /zebra|zd410/i.test(n));
+  if (settings.printer && printers.includes(settings.printer)) sel.value = settings.printer;
+  else if (zebra) sel.value = zebra;
+
+  if (settings.connType) el('connType').value = settings.connType;
+  if (settings.ip) el('ipInput').value = settings.ip;
+  if (settings.usb) el('usbInput').value = settings.usb;
+  if (typeof settings.autoprint === 'boolean') el('autoprint').checked = settings.autoprint;
+
+  // Template
+  await reloadTemplates();
+  const startFile = (settings.lastTemplate && templates.some((t) => t.file === settings.lastTemplate))
+    ? settings.lastTemplate
+    : (templates.find((t) => /codice-fiscale/i.test(t.file))?.file || templates[0]?.file);
+  if (startFile) await selectTemplate(startFile);
+
+  // Eventi
+  el('connType').addEventListener('change', onConnTypeChange);
+  el('printerSelect').addEventListener('change', () => window.zebra.saveSettings({ printer: el('printerSelect').value }));
+  el('ipInput').addEventListener('change', () => window.zebra.saveSettings({ ip: el('ipInput').value.trim() }));
+  el('usbInput').addEventListener('change', () => window.zebra.saveSettings({ usb: el('usbInput').value.trim() }));
+  el('autoprint').addEventListener('change', () => window.zebra.saveSettings({ autoprint: el('autoprint').checked }));
+  el('printBtn').addEventListener('click', doPrint);
+
+  el('modePrint').addEventListener('click', () => setMode('print'));
+  el('modeEditor').addEventListener('click', () => { editing = null; setMode('editor'); });
+  el('editThisBtn').addEventListener('click', () => { editing = null; openEditor(rawTemplate || blankTemplate()); });
+  el('backToPrintBtn').addEventListener('click', () => setMode('print'));
+  el('newTemplateBtn').addEventListener('click', () => { current = null; rawTemplate = null; editing = null; openEditor(blankTemplate()); });
+
+  el('saveTplBtn').addEventListener('click', () => saveEditor(false));
+  el('duplicateTplBtn').addEventListener('click', () => saveEditor(true));
+  el('deleteTplBtn').addEventListener('click', deleteEditor);
+  el('addFieldMetaBtn').addEventListener('click', () => addFieldMetaRow('', { type: 'select', options: [] }));
+
+  // Controlli griglia / snap dell'anteprima interattiva
+  el('chkGrid').addEventListener('change', () => { editorGrid.show = el('chkGrid').checked; drawEditorCanvas(); });
+  el('chkSnap').addEventListener('change', () => { editorGrid.snap = el('chkSnap').checked; });
+  el('gridStep').addEventListener('change', () => { editorGrid.step = Number(el('gridStep').value); drawEditorCanvas(); });
+
+  // Proprietà editor → anteprima live
+  ['edName', 'edDesc', 'edW', 'edH', 'edDpi', 'edTear'].forEach((id) =>
+    el(id).addEventListener('input', debounce(() => { readEditorIntoDraft(); updateEditorPreview(); })));
+
+  document.querySelectorAll('[data-add]').forEach((btn) => btn.addEventListener('click', () => {
+    readEditorIntoDraft();
+    const t = btn.dataset.add;
+    const defaults = {
+      text: { label: 'Testo', type: 'text', x_mm: 3, y_mm: 3, font: '0', height_mm: 3, width_mm: 3, text: '{{campo}}' },
+      barcode128: { label: 'Barcode', type: 'barcode128', x_mm: 3, y_mm: 3, bar_height_mm: 10, module_width: 2, show_text: false, text: '{{campo}}' },
+      qrcode: { label: 'QR code', type: 'qrcode', x_mm: 3, y_mm: 3, magnification: 4, text: '{{campo}}' },
+      box: { label: 'Riquadro', type: 'box', x_mm: 2, y_mm: 2, width_mm: 40, height_mm: 20, thickness_mm: 0.4 },
+      line: { label: 'Linea', type: 'line', x_mm: 2, y_mm: 10, width_mm: 40, height_mm: 0, thickness_mm: 0.4 },
+    };
+    editing.elements.push(defaults[t]); renderEditorElements(); updateEditorPreview();
+  }));
+
+  onConnTypeChange();
+}
+
+init();

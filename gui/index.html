@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabelForge</title>
+  <style>
+    :root {
+      --bg: #eef1f5; --card: #fff; --border: #d8dee6; --text: #1f2933; --muted: #6b7280;
+      --accent: #2563eb; --accent-hover: #1d4ed8; --ok: #16a34a; --err: #dc2626; --side: #111827;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text); font-size: 14px;
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    }
+    /* Layout a pannelli */
+    .app { display: flex; flex: 1; min-height: 0; }
+    .sidebar {
+      width: 300px; flex-shrink: 0; background: var(--side); color: #e5e7eb;
+      display: flex; flex-direction: column; overflow-y: auto; padding: 16px;
+    }
+    .sidebar h1 { font-size: 15px; margin: 0 0 14px; font-weight: 700; }
+    .sidebar h3 {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+      color: #9ca3af; margin: 18px 0 8px;
+    }
+    .sidebar label { color: #cbd5e1; font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; }
+    .sidebar select, .sidebar input {
+      width: 100%; padding: 7px 9px; border-radius: 6px; border: 1px solid #374151;
+      background: #1f2937; color: #f9fafb; font-size: 13px; margin-bottom: 10px;
+    }
+    .main { flex: 1; display: flex; min-width: 0; }
+    .content { flex: 1; overflow-y: auto; padding: 20px 24px; min-width: 0; }
+    .preview-pane {
+      width: 42%; max-width: 560px; flex-shrink: 0; background: #dfe4ea;
+      border-left: 1px solid var(--border); padding: 20px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .preview-pane h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0; }
+    .preview-frame {
+      background: #fff; border: 1px solid var(--border); border-radius: 6px;
+      padding: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      display: flex; align-items: center; justify-content: center; min-height: 160px;
+    }
+    .preview-frame svg { max-height: 60vh; }
+    .preview-note { color: var(--muted); font-size: 11px; }
+    /* canvas interattivo editor */
+    .canvaswrap { position: relative; width: 100%; display: flex; justify-content: center; }
+    .canvaswrap .visual, .canvaswrap .overlay { width: 100%; max-height: 60vh; }
+    .canvaswrap .overlay { position: absolute; inset: 0; }
+    .overlay .hit { fill: transparent; cursor: move; }
+    .overlay .hit:hover { fill: rgba(37,99,235,0.08); }
+    .overlay .sel { fill: rgba(37,99,235,0.10); stroke: var(--accent); stroke-width: 0.3; stroke-dasharray: 0.8 0.6; }
+    .overlay .handle { fill: #fff; stroke: var(--accent); stroke-width: 0.3; cursor: nwse-resize; }
+    .overlay .gridline { stroke: #c7d0da; stroke-width: 0.08; }
+    .overlay .gridline.major { stroke: #aab4c0; stroke-width: 0.15; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+    .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
+    .content label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+    .hint { color: var(--muted); font-size: 12px; font-weight: 400; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 7px;
+      font-size: 14px; background: #fff; color: var(--text); font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+    .field { margin-bottom: 12px; }
+    .field.scan input { border-color: var(--accent); background: #eff6ff; font-family: Consolas, monospace; letter-spacing: .03em; }
+    .scan-badge { display: inline-block; background: var(--accent); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; text-transform: uppercase; letter-spacing: .05em; }
+    .row { display: flex; gap: 12px; }
+    .row > * { flex: 1; }
+    .checkbox { display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; margin-top: 6px; }
+    .checkbox input { width: auto; }
+    button.primary { width: 100%; padding: 13px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    button.primary:hover { background: var(--accent-hover); }
+    button.primary:disabled { opacity: .5; cursor: not-allowed; }
+    button.ghost { padding: 8px 12px; background: #fff; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); }
+    button.ghost:hover { border-color: var(--accent); color: var(--accent); }
+    button.danger { color: var(--err); }
+    #status { margin-top: 12px; padding: 10px 12px; border-radius: 7px; font-weight: 500; display: none; }
+    #status.ok { display: block; background: #dcfce7; color: var(--ok); }
+    #status.err { display: block; background: #fee2e2; color: var(--err); }
+    #status.info { display: block; background: #dbeafe; color: var(--accent); }
+    .tpl-desc { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    /* Sidebar mode switch */
+    .modeswitch { display: flex; gap: 6px; margin-bottom: 4px; }
+    .modeswitch button {
+      flex: 1; padding: 8px; border-radius: 7px; border: 1px solid #374151;
+      background: #1f2937; color: #cbd5e1; cursor: pointer; font-weight: 600; font-size: 13px;
+    }
+    .modeswitch button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tpl-list { display: flex; flex-direction: column; gap: 4px; }
+    .tpl-list button {
+      text-align: left; padding: 8px 10px; border-radius: 7px; border: 1px solid transparent;
+      background: #1f2937; color: #e5e7eb; cursor: pointer; font-size: 13px;
+    }
+    .tpl-list button.active { background: var(--accent); border-color: var(--accent); }
+    .tpl-list .tag { font-size: 9px; color: #9ca3af; text-transform: uppercase; }
+
+    /* Elementi stampa toggle */
+    #elements, .tubes { border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; margin-bottom: 12px; background: #fafbfc; }
+    .elem-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-weight: 500; cursor: pointer; }
+    .elem-item input { width: auto; }
+    .elem-item .etype { font-size: 10px; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; margin-left: auto; }
+    .tube-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eef1f4; }
+    .tube-row:last-child { border-bottom: none; }
+    .tube-name { font-weight: 600; font-size: 13px; padding: 2px 10px; border-radius: 12px; border: 1px solid var(--border); min-width: 120px; }
+    .tube-rossa { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .tube-viola { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
+    .tube-blu { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+    .tube-bianco { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
+    .tube-verde { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .tube-omocisteina { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+    .tube-row .qty { width: 56px; text-align: center; }
+    .qbtn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: #fff; font-size: 18px; line-height: 1; cursor: pointer; color: var(--text); }
+    .qbtn:hover { background: #eef2ff; border-color: var(--accent); }
+    .tube-row .qbtn:nth-of-type(1) { margin-left: auto; }
+
+    /* Editor */
+    .elrow { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #fafbfc; }
+    .elrow .elhead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .elrow .elhead select { max-width: 160px; }
+    .elrow .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .elrow .grid .fld { display: flex; flex-direction: column; }
+    .elrow .grid label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .elrow .grid input, .elrow .grid select { padding: 6px 8px; font-size: 13px; }
+    .elrow .full { grid-column: 1 / -1; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .listmgr .opt { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .listmgr .opt input { flex: 1; }
+    .mini { font-size: 11px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <h1>🏷️ LabelForge</h1>
+
+      <div class="modeswitch">
+        <button id="modePrint" class="active">Stampa</button>
+        <button id="modeEditor">Editor</button>
+      </div>
+
+      <h3>Connessione</h3>
+      <label>Metodo</label>
+      <select id="connType">
+        <option value="printer">Stampante Windows</option>
+        <option value="ip">Rete (IP)</option>
+        <option value="usb">Porta USB</option>
+      </select>
+      <div id="wrapPrinter">
+        <label>Stampante</label>
+        <select id="printerSelect"></select>
+      </div>
+      <div id="wrapIp" style="display:none;">
+        <label>Indirizzo IP</label>
+        <input type="text" id="ipInput" placeholder="192.168.1.50" />
+      </div>
+      <div id="wrapUsb" style="display:none;">
+        <label>Porta USB</label>
+        <input type="text" id="usbInput" placeholder="USB001" />
+      </div>
+
+      <h3>Modelli etichetta</h3>
+      <div class="tpl-list" id="tplList"></div>
+      <button class="ghost" id="newTemplateBtn" style="margin-top:10px;">+ Nuovo modello</button>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <!-- PRINT VIEW -->
+      <div class="content" id="printView">
+        <div class="card">
+          <h2 id="tplTitle">Etichetta</h2>
+          <div class="tpl-desc" id="templateDesc"></div>
+          <div id="fields" style="margin-top:12px;"></div>
+          <div id="elementsBox" style="display:none;">
+            <label>Elementi da stampare <span class="hint">(spunta cosa includere)</span></label>
+            <div id="elements"></div>
+          </div>
+          <div class="row">
+            <div class="field" style="max-width:140px;">
+              <label for="copies">Copie</label>
+              <input type="number" id="copies" value="1" min="1" max="999" />
+            </div>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" id="autoprint" checked />
+            Stampa automatica dopo la scansione
+          </label>
+          <button class="ghost" id="editThisBtn" style="margin-top:10px;">✎ Modifica questo modello</button>
+        </div>
+        <button class="primary" id="printBtn">Stampa etichetta</button>
+        <div id="status"></div>
+      </div>
+
+      <!-- EDITOR VIEW -->
+      <div class="content" id="editorView" style="display:none;">
+        <div class="toolbar">
+          <button class="ghost" id="saveTplBtn">💾 Salva modello</button>
+          <button class="ghost" id="duplicateTplBtn">⧉ Salva come nuovo</button>
+          <button class="ghost danger" id="deleteTplBtn">🗑 Elimina</button>
+          <button class="ghost" id="backToPrintBtn">← Torna alla stampa</button>
+        </div>
+        <div class="card">
+          <h2>Proprietà etichetta</h2>
+          <div class="row">
+            <div class="field"><label>Nome (file)</label><input type="text" id="edName" /></div>
+            <div class="field"><label>DPI</label>
+              <select id="edDpi"><option value="203">203</option><option value="300">300</option></select>
+            </div>
+          </div>
+          <div class="field"><label>Descrizione</label><input type="text" id="edDesc" /></div>
+          <div class="row">
+            <div class="field"><label>Larghezza (mm)</label><input type="number" id="edW" step="0.5" /></div>
+            <div class="field"><label>Altezza (mm)</label><input type="number" id="edH" step="0.5" /></div>
+            <div class="field"><label>Avanzo strappo (tear-off)</label><input type="number" id="edTear" step="1" /></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Elementi</h2>
+          <div id="edElements"></div>
+          <div class="toolbar" style="margin:8px 0 0;">
+            <button class="ghost" data-add="text">+ Testo</button>
+            <button class="ghost" data-add="barcode128">+ Barcode</button>
+            <button class="ghost" data-add="qrcode">+ QR code</button>
+            <button class="ghost" data-add="box">+ Riquadro</button>
+            <button class="ghost" data-add="line">+ Linea</button>
+          </div>
+        </div>
+
+        <div class="card listmgr">
+          <h2>Campi a lista (select / provette)</h2>
+          <p class="mini">Definisci quali campi <code>{{...}}</code> sono menu a tendina o liste con quantità (es. provetta). Usa i nomi dei campi presenti nei testi degli elementi.</p>
+          <div id="edFieldMeta"></div>
+          <button class="ghost" id="addFieldMetaBtn" style="margin-top:8px;">+ Aggiungi campo a lista</button>
+        </div>
+        <div id="editorStatus"></div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="preview-pane">
+        <h3>Anteprima</h3>
+        <div id="previewControls" style="display:none; gap:14px; align-items:center; flex-wrap:wrap;">
+          <label class="checkbox" style="margin:0;"><input type="checkbox" id="chkGrid" checked> Griglia</label>
+          <label class="checkbox" style="margin:0;"><input type="checkbox" id="chkSnap" checked> Snap</label>
+          <label style="margin:0; display:flex; align-items:center; gap:6px; font-size:12px;">Passo
+            <select id="gridStep" style="width:auto; padding:4px 6px;">
+              <option value="0.5">0,5 mm</option>
+              <option value="1">1 mm</option>
+              <option value="2">2 mm</option>
+              <option value="5">5 mm</option>
+            </select>
+          </label>
+        </div>
+        <div class="preview-frame" id="previewFrame"></div>
+        <div class="preview-note" id="previewNote"></div>
+        <div class="preview-note" id="previewHint" style="display:none;">Clicca un elemento per selezionarlo, trascinalo per spostarlo, usa la maniglia in basso a destra per ridimensionarlo.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="preview.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
