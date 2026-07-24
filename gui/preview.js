@@ -86,14 +86,17 @@
         return out;
       }
       case 'code39':
+      case 'code93':
       case 'ean13': {
         const text = fillPlaceholders(el.text, data) || (el.type === 'ean13' ? '000000000000' : '000');
         const h = el.bar_height_mm || 10;
         const moduleMm = (el.module_width || 2) / (dpi / 25.4);
         let out = '', w = 20, label = text;
         if (typeof window !== 'undefined' && window.Barcode) {
-          const r = el.type === 'ean13' ? window.Barcode.ean13SVG(text, x, y, h, moduleMm)
-                                        : window.Barcode.code39SVG(text, x, y, h, moduleMm);
+          let r;
+          if (el.type === 'ean13') r = window.Barcode.ean13SVG(text, x, y, h, moduleMm);
+          else if (el.type === 'code93') r = window.Barcode.code93SVG(text, x, y, h, moduleMm);
+          else r = window.Barcode.code39SVG(text, x, y, h, moduleMm);
           if (r) { out = r.svg; w = r.width; if (r.digits) label = r.digits; }
         }
         if (!out) out = barcodeBars(text, x, y, Math.max(20, text.length * 2.2), h);
@@ -101,6 +104,16 @@
           out += `<text x="${(x + w / 2).toFixed(2)}" y="${(y + h + 3).toFixed(2)}" font-size="2.6" font-family="monospace" text-anchor="middle" fill="#111">${esc(label)}</text>`;
         }
         return out;
+      }
+      case 'datamatrix': {
+        const text = fillPlaceholders(el.text, data);
+        const size = (el.magnification || 5) * 4; // ~mm indicativi
+        const url = qrCache && qrCache['dm:' + text];
+        if (url) {
+          return `<image x="${x}" y="${y}" width="${size}" height="${size}" href="${url}" style="image-rendering:pixelated"/>`;
+        }
+        return `<rect x="${x}" y="${y}" width="${size}" height="${size}" fill="#fff" stroke="#111" stroke-width="0.2"/>` +
+          `<text x="${(x + size / 2).toFixed(2)}" y="${(y + size / 2).toFixed(2)}" font-size="${(size / 6).toFixed(2)}" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8">DM</text>`;
       }
       case 'qrcode': {
         const text = fillPlaceholders(el.text, data);
@@ -148,12 +161,14 @@
         const text = fillPlaceholders(el.text, data) || 'testo';
         const hmm = el.height_mm || (el.height_dots ? (el.height_dots / dpi) * 25.4 : 3);
         h = hmm; w = Math.max(6, text.length * hmm * 0.62);
-      } else if (el.type === 'barcode128' || el.type === 'code39' || el.type === 'ean13') {
+      } else if (el.type === 'barcode128' || el.type === 'code39' || el.type === 'code93' || el.type === 'ean13') {
         const text = fillPlaceholders(el.text, data);
         h = el.bar_height_mm || 10; w = Math.max(20, (text.length || 6) * 2.4);
         if (el.show_text !== false) h += 3.5;
       } else if (el.type === 'qrcode') {
         w = h = (el.magnification || 4) * 5;
+      } else if (el.type === 'datamatrix') {
+        w = h = (el.magnification || 5) * 4;
       } else if (el.type === 'box' || el.type === 'line') {
         w = Number(el.width_mm) || 0; h = Math.max(Number(el.height_mm) || 0, el.thickness_mm || 0.3);
       }

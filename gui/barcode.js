@@ -124,7 +124,51 @@
     return { svg: out, width: enc.bits.length * moduleMm, digits: enc.digits };
   }
 
-  const api = { encode128B, code128SVG, encode39, code39SVG, encodeEAN13, ean13SVG, ean13CheckDigit, PATTERNS };
+  // ---------------- Code 93 ----------------
+  // 47 simboli + start/stop '*'. Ogni pattern = 6 elementi (barra/spazio) che sommano 9 moduli.
+  const C93_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%';
+  const C93_PAT = {
+    '0':'131112','1':'111213','2':'111312','3':'111411','4':'121113','5':'121212','6':'121311',
+    '7':'111114','8':'131211','9':'141111','A':'211113','B':'211212','C':'211311','D':'221112',
+    'E':'221211','F':'231111','G':'112113','H':'112212','I':'112311','J':'122112','K':'132111',
+    'L':'111123','M':'111222','N':'111321','O':'121122','P':'131121','Q':'212112','R':'212211',
+    'S':'211122','T':'211221','U':'221121','V':'222111','W':'112122','X':'112221','Y':'122121',
+    'Z':'123111','-':'121131','.':'311112',' ':'311211','$':'321111','/':'112131','+':'113121',
+    '%':'211131','*':'111141'
+  };
+  function code93Checks(data) {
+    const vals = data.split('').map((c) => C93_CHARS.indexOf(c));
+    // C: pesi 1..20 da destra
+    let c = 0;
+    for (let i = 0; i < vals.length; i++) c += vals[vals.length - 1 - i] * ((i % 20) + 1);
+    c %= 47;
+    const withC = vals.concat(c);
+    let k = 0;
+    for (let i = 0; i < withC.length; i++) k += withC[withC.length - 1 - i] * ((i % 15) + 1);
+    k %= 47;
+    return C93_CHARS[c] + C93_CHARS[k];
+  }
+  function encode93(text) {
+    const clean = String(text).toUpperCase().replace(/[^0-9A-Z\-. $\/+%]/g, '');
+    const checks = code93Checks(clean);
+    const seq = '*' + clean + checks + '*';
+    const widths = [];
+    for (const ch of seq) { const p = C93_PAT[ch] || C93_PAT['*']; for (const d of p) widths.push(Number(d)); }
+    widths.push(1); // barra di terminazione
+    return widths;
+  }
+  function code93SVG(text, x, y, h, moduleMm) {
+    const widths = encode93(text);
+    let out = ''; let cursor = x;
+    for (let i = 0; i < widths.length; i++) {
+      const w = widths[i] * moduleMm;
+      if (i % 2 === 0) out += `<rect x="${cursor.toFixed(3)}" y="${y}" width="${w.toFixed(3)}" height="${h}" fill="#111"/>`;
+      cursor += w;
+    }
+    return { svg: out, width: cursor - x };
+  }
+
+  const api = { encode128B, code128SVG, encode39, code39SVG, encodeEAN13, ean13SVG, ean13CheckDigit, encode93, code93SVG, PATTERNS };
   if (typeof window !== 'undefined') window.Barcode = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

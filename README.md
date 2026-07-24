@@ -31,7 +31,7 @@ Design labels visually, fill fields (or scan them), and print over network or US
 | | |
 |---|---|
 | 🖨️ **Multiple connections** | Network (raw port 9100), Windows printer by name (Win32 API — works with any port type, even Zebra Setup Utilities virtual ports), or USB device on Linux/Mac. |
-| 🧩 **Dynamic templates** | JSON templates with text, barcodes (Code128, Code39, EAN‑13), QR code, lines and boxes. Sizes in mm; 203/300 dpi. |
+| 🧩 **Dynamic templates** | JSON templates with text, barcodes (Code128, Code39, Code93, EAN‑13), QR code, DataMatrix, lines and boxes. Sizes in mm; 203/300 dpi. |
 | 🎨 **Visual editor** | Live preview with **real Code128 & QR** rendering; select, drag, resize and snap elements to a grid. No JSON editing required. |
 | ⌨️ **Smart fields** | `{{field}}` inputs as text, dropdowns, or per‑option quantity lists (one label per unit). |
 | ⚡ **Scan & print** | Auto‑print after a barcode scan (the scanner acts as a keyboard) — ideal for batches. |
@@ -116,7 +116,7 @@ Templates live in `templates/*.json`. Minimal example:
 }
 ```
 
-**Element types:** `text`, `barcode128`, `code39`, `ean13`, `qrcode`, `box`, `line`.
+**Element types:** `text`, `barcode128`, `code39`, `code93`, `ean13`, `datamatrix`, `qrcode`, `box`, `line`.
 **Field types** (`field_meta`): `select` → dropdown, `multi-qty` → per‑option quantity list (one
 label per unit). Included samples: product, shipping, QR, and `product-variants` (dropdown + qty list).
 

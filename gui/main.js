@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 const QRCode = require('qrcode');
+const bwipjs = require('bwip-js');
 const { buildZpl, extractPlaceholders } = require('../lib/zpl');
 const { sendNetwork, sendWindowsPrinterByName, sendUSBWindows, sendUSBUnix } = require('../lib/print');
 
@@ -299,6 +300,14 @@ ipcMain.handle('qr-matrix', (_e, text) => {
   } catch (e) {
     return { size: 0, data: [] };
   }
+});
+
+// Immagine DataMatrix (PNG dataURL) per l'anteprima.
+ipcMain.handle('dm-image', async (_e, text) => {
+  try {
+    const png = await bwipjs.toBuffer({ bcid: 'datamatrix', text: String(text || ' '), scale: 4, includetext: false });
+    return 'data:image/png;base64,' + png.toString('base64');
+  } catch (e) { return ''; }
 });
 
 ipcMain.handle('get-settings', () => loadSettings());

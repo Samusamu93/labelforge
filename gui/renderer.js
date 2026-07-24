@@ -28,13 +28,25 @@ function qrValuesOf(tpl, data) {
   (tpl.elements || []).forEach((e) => { if (e.type === 'qrcode') { const v = fillPh(e.text, data); if (v) vals.push(v); } });
   return vals;
 }
-// Recupera le matrici QR mancanti dal processo principale, poi ridisegna.
-async function ensureQR(values, rerender) {
+function dmValuesOf(tpl, data) {
+  const vals = [];
+  (tpl.elements || []).forEach((e) => { if (e.type === 'datamatrix') { const v = fillPh(e.text, data); if (v) vals.push(v); } });
+  return vals;
+}
+// Recupera QR e DataMatrix mancanti dal processo principale, poi ridisegna.
+async function ensureQR(values, rerender, dmValues) {
   let added = false;
   for (const v of values) {
     if (!(v in qrCache)) {
-      qrCache[v] = { size: 0 }; // segnaposto anti-duplicati
+      qrCache[v] = { size: 0 };
       try { const m = await window.zebra.qrMatrix(v); if (m && m.size) { qrCache[v] = m; added = true; } } catch (_) {}
+    }
+  }
+  for (const v of (dmValues || [])) {
+    const key = 'dm:' + v;
+    if (!(key in qrCache)) {
+      qrCache[key] = '';
+      try { const url = await window.zebra.dmImage(v); if (url) { qrCache[key] = url; added = true; } } catch (_) {}
     }
   }
   if (added && typeof rerender === 'function') rerender();
@@ -179,7 +191,7 @@ function updatePrintPreview() {
   }
   const multi = collectMulti();
   if (multi) { const first = multi.items[0]; data[multi.field] = first ? first.value : (current.fields.find(f => f.name === multi.field)?.options?.[0] || ''); }
-  ensureQR(qrValuesOf(rawTemplate, data), updatePrintPreview);
+  ensureQR(qrValuesOf(rawTemplate, data), updatePrintPreview, dmValuesOf(rawTemplate, data));
   el('previewFrame').innerHTML = window.LabelPreview.renderPreviewSVG(rawTemplate, data, collectEnabledIndices(), qrCache);
   el('previewNote').textContent = `${rawTemplate.width_mm}×${rawTemplate.height_mm} mm · ${rawTemplate.dpi || 203} dpi`;
 }
@@ -392,6 +404,8 @@ const ELEMENT_PROPS = {
   barcode128: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
   code39: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
   ean13: [['text', 'Dato: 12-13 cifre ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
+  code93: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
+  datamatrix: [['text', 'Dato ({{campo}})', 'text', 'full'], ['magnification', 'Dimensione modulo', 'number']],
   qrcode: [['text', 'Dato ({{campo}})', 'text', 'full'], ['magnification', 'Ingrandimento (1-10)', 'number']],
   box: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
   line: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
@@ -432,7 +446,7 @@ function renderEditorElements() {
     if (open) {
       const bar = document.createElement('div'); bar.className = 'elhead'; bar.style.marginTop = '8px';
       const typeSel = document.createElement('select');
-      ['text', 'barcode128', 'code39', 'ean13', 'qrcode', 'box', 'line'].forEach((t) => { const o = document.createElement('option'); o.value = t; o.textContent = t; if (t === elem.type) o.selected = true; typeSel.appendChild(o); });
+      ['text', 'barcode128', 'code39', 'code93', 'ean13', 'datamatrix', 'qrcode', 'box', 'line'].forEach((t) => { const o = document.createElement('option'); o.value = t; o.textContent = t; if (t === elem.type) o.selected = true; typeSel.appendChild(o); });
       typeSel.onchange = () => { readEditorIntoDraft(); pushSnapshot(); editing.elements[i].type = typeSel.value; renderEditorElements(); drawEditorCanvas(); };
       const lbl = document.createElement('input'); lbl.type = 'text'; lbl.placeholder = 'Etichetta elemento'; lbl.value = elem.label || ''; lbl.dataset.prop = 'label'; lbl.style.flex = '1';
       const en = document.createElement('label'); en.className = 'checkbox'; en.style.margin = '0';
@@ -576,7 +590,7 @@ function drawEditorCanvas() {
   const W = Number(editing.width_mm) || 50, H = Number(editing.height_mm) || 25;
   const data = sampleData(editing);
   const allIdx = (editing.elements || []).map((_, i) => i); // in editor mostra tutti
-  ensureQR(qrValuesOf(editing, data), drawEditorCanvas);
+  ensureQR(qrValuesOf(editing, data), drawEditorCanvas, dmValuesOf(editing, data));
   const visual = window.LabelPreview.renderPreviewSVG(editing, data, allIdx, qrCache).replace('<svg ', '<svg class="visual" ');
   const boxes = window.LabelPreview.computeBoxes(editing, data);
 
@@ -808,6 +822,8 @@ async function init() {
       barcode128: { label: 'Barcode', type: 'barcode128', x_mm: 3, y_mm: 3, bar_height_mm: 10, module_width: 2, show_text: false, text: '{{campo}}' },
       code39: { label: 'Code39', type: 'code39', x_mm: 3, y_mm: 3, bar_height_mm: 10, module_width: 2, show_text: true, text: '{{campo}}' },
       ean13: { label: 'EAN-13', type: 'ean13', x_mm: 3, y_mm: 3, bar_height_mm: 12, module_width: 2, show_text: true, text: '{{campo}}' },
+      code93: { label: 'Code93', type: 'code93', x_mm: 3, y_mm: 3, bar_height_mm: 10, module_width: 2, show_text: true, text: '{{campo}}' },
+      datamatrix: { label: 'DataMatrix', type: 'datamatrix', x_mm: 3, y_mm: 3, magnification: 5, text: '{{campo}}' },
       qrcode: { label: 'QR code', type: 'qrcode', x_mm: 3, y_mm: 3, magnification: 4, text: '{{campo}}' },
       box: { label: 'Riquadro', type: 'box', x_mm: 2, y_mm: 2, width_mm: 40, height_mm: 20, thickness_mm: 0.4 },
       line: { label: 'Linea', type: 'line', x_mm: 2, y_mm: 10, width_mm: 40, height_mm: 0, thickness_mm: 0.4 },
