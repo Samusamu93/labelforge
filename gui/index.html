@@ -120,6 +120,30 @@
     .qbtn:hover { background: #eef2ff; border-color: var(--accent); }
     .tube-row .qbtn:nth-of-type(1) { margin-left: auto; }
 
+    /* Tema scuro */
+    body.dark { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --border:#334155; }
+    body.dark .content { background: var(--bg); }
+    body.dark #elements, body.dark .tubes, body.dark .elrow, body.dark #edElements .elrow { background:#0b1220; }
+    body.dark input, body.dark select, body.dark textarea { background:#0b1220; color:var(--text); border-color:var(--border); }
+    body.dark .preview-pane { background:#0b1220; }
+    body.dark button.ghost { background:#0b1220; color:var(--text); }
+    body.dark .qbtn { background:#0b1220; color:var(--text); }
+
+    /* Ricerca template + toolbar sidebar */
+    .side-search { width:100%; padding:7px 9px; border-radius:6px; border:1px solid #374151; background:#1f2937; color:#f9fafb; font-size:13px; margin-bottom:8px; }
+    .icon-btn { background:transparent; border:none; color:#cbd5e1; cursor:pointer; font-size:16px; padding:2px 6px; border-radius:6px; }
+    .icon-btn:hover { background:#374151; }
+    .sidehead { display:flex; align-items:center; }
+    .sidehead h1 { flex:1; }
+
+    /* Storico stampe */
+    #historyBox { margin-top:16px; }
+    .hist-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:7px; margin-bottom:6px; background:var(--card); font-size:13px; }
+    .hist-item .meta { flex:1; }
+    .hist-item .meta small { color:var(--muted); }
+    kbd { background:#e5e7eb; color:#111827; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:5px; padding:1px 6px; font-family:Consolas,monospace; font-size:12px; }
+    body.dark kbd { background:#334155; color:#e2e8f0; border-color:#475569; }
+
     /* Editor */
     .elrow { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #fafbfc; }
     .elrow .elhead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -139,7 +163,11 @@
   <div class="app">
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <h1>🏷️ LabelForge</h1>
+      <div class="sidehead">
+        <h1>🏷️ LabelForge</h1>
+        <button class="icon-btn" id="helpBtn" title="Scorciatoie da tastiera">⌨️</button>
+        <button class="icon-btn" id="themeBtn" title="Tema chiaro/scuro">🌙</button>
+      </div>
 
       <div class="modeswitch">
         <button id="modePrint" class="active">Stampa</button>
@@ -169,6 +197,7 @@
       <div id="connStatus" style="font-size:12px; margin-top:8px;"></div>
 
       <h3>Modelli etichetta</h3>
+      <input type="text" class="side-search" id="tplSearch" placeholder="🔎 Cerca modello..." />
       <div class="tpl-list" id="tplList"></div>
       <button class="ghost" id="newTemplateBtn" style="margin-top:10px;">+ Nuovo modello</button>
     </aside>
@@ -203,11 +232,17 @@
         </div>
         <button class="primary" id="printBtn">Stampa etichetta</button>
         <div id="status"></div>
+        <div id="historyBox" style="display:none;">
+          <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;">Storico stampe</h2>
+          <div id="historyList"></div>
+        </div>
       </div>
 
       <!-- EDITOR VIEW -->
       <div class="content" id="editorView" style="display:none;">
         <div class="toolbar">
+          <button class="ghost" id="undoBtn" title="Annulla (Ctrl+Z)">↶ Annulla</button>
+          <button class="ghost" id="redoBtn" title="Ripeti (Ctrl+Y)">↷ Ripeti</button>
           <button class="ghost" id="saveTplBtn">💾 Salva modello</button>
           <button class="ghost" id="duplicateTplBtn">⧉ Salva come nuovo</button>
           <button class="ghost danger" id="deleteTplBtn">🗑 Elimina</button>
@@ -237,6 +272,8 @@
           <div class="toolbar" style="margin:8px 0 0;">
             <button class="ghost" data-add="text">+ Testo</button>
             <button class="ghost" data-add="barcode128">+ Barcode</button>
+            <button class="ghost" data-add="code39">+ Code39</button>
+            <button class="ghost" data-add="ean13">+ EAN-13</button>
             <button class="ghost" data-add="qrcode">+ QR code</button>
             <button class="ghost" data-add="box">+ Riquadro</button>
             <button class="ghost" data-add="line">+ Linea</button>
@@ -271,6 +308,25 @@
         <div class="preview-note" id="previewNote"></div>
         <div class="preview-note" id="previewHint" style="display:none;">Clicca un elemento per selezionarlo, trascinalo per spostarlo, usa la maniglia in basso a destra per ridimensionarlo.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Legenda scorciatoie -->
+  <div id="helpModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:22px 26px; width:420px; max-width:90vw; box-shadow:0 10px 40px rgba(0,0,0,.3);">
+      <div style="display:flex; align-items:center; margin-bottom:14px;">
+        <h2 style="margin:0; flex:1; font-size:17px;">⌨️ Scorciatoie da tastiera</h2>
+        <button class="icon-btn" id="helpClose" title="Chiudi" style="font-size:18px;">✕</button>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:14px;">
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>P</kbd></td><td>Stampa l'etichetta (in vista Stampa)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>Salva il modello (in vista Editor)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>Cerca tra i modelli</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Annulla (nell'editor)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>Ripeti (nell'editor)</td></tr>
+        <tr><td style="padding:7px 0;"><kbd>Invio</kbd></td><td>Nel campo Scanner: stampa (se "stampa automatica" attiva)</td></tr>
+      </table>
+      <p class="mini" style="margin-top:14px; color:var(--muted);">Su Mac usa <kbd>⌘</kbd> al posto di <kbd>Ctrl</kbd>.</p>
     </div>
   </div>
 

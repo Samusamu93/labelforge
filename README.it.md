@@ -31,13 +31,14 @@ Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via 
 | | |
 |---|---|
 | 🖨️ **Connessioni multiple** | Rete (porta raw 9100), stampante Windows per nome (API Win32 — funziona con qualsiasi porta, anche quelle virtuali di Zebra Setup Utilities), o device USB su Linux/Mac. |
-| 🧩 **Template dinamici** | Template JSON con testo, codice a barre Code128, QR code, linee e riquadri. Misure in mm; 203/300 dpi. |
+| 🧩 **Template dinamici** | Template JSON con testo, codici a barre (Code128, Code39, EAN‑13), QR code, linee e riquadri. Misure in mm; 203/300 dpi. |
 | 🎨 **Editor visuale** | Anteprima live con **barcode Code128 e QR reali**; seleziona, trascina, ridimensiona e aggancia gli elementi a una griglia. Nessuna modifica manuale del JSON. |
 | ⌨️ **Campi intelligenti** | Campi `{{campo}}` come testo, menu a tendina o liste con quantità per voce (una etichetta per unità). |
 | ⚡ **Scansiona e stampa** | Stampa automatica dopo la scansione (il lettore si comporta come tastiera) — ideale per raffiche. |
 | 📄 **Stampa in blocco da CSV** | Importa un CSV e stampa una etichetta per riga (le colonne riempiono i `{{campi}}`). |
 | 🔁 **Condividi i template** | Esporta/importa i template come `.json`; testa la connessione alla stampante prima di stampare. |
-| 💾 **Ricorda tutto** | Stampante, ultimo template e preferenze salvati tra un avvio e l'altro. |
+| 🕘 **Storico e scorciatoie** | Ristampa dallo storico, ricerca template, tema chiaro/scuro, undo/redo nell'editor e scorciatoie (Ctrl+P/S/F/Z/Y). |
+| 💾 **Ricorda tutto** | Stampante, ultimo template, tema e preferenze salvati tra un avvio e l'altro. |
 | 📦 **Distribuisci come app** | Pacchettizzazione in `.exe` Windows; collegamento sul Desktop creato automaticamente al primo avvio. |
 
 ## 📋 Requisiti
@@ -109,7 +110,7 @@ I template stanno in `templates/*.json`. Esempio minimo:
 }
 ```
 
-**Tipi di elemento:** `text`, `barcode128`, `qrcode`, `box`, `line`.
+**Tipi di elemento:** `text`, `barcode128`, `code39`, `ean13`, `qrcode`, `box`, `line`.
 **Tipi di campo** (`field_meta`): `select` → menu a tendina, `multi-qty` → lista con quantità per
 voce (una etichetta per unità). Esempi inclusi: prodotto, spedizione, QR e `product-variants`
 (tendina + lista quantità).

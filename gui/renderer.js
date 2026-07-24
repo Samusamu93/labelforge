@@ -14,6 +14,10 @@ let editorSel = null;      // indice elemento selezionato nell'editor
 let editorGrid = { show: true, snap: true, step: 0.5 };
 let importedRows = null;   // righe importate da CSV (stampa in blocco)
 const qrCache = {};        // valore QR -> { size, data } (matrice reale)
+let tplFilter = '';        // filtro ricerca template
+let history = [];          // storico stampe
+let undoStack = [];        // editor: stati precedenti
+let redoStack = [];        // editor: stati rifatti
 
 function fillPh(str, data) {
   if (typeof str !== 'string') return '';
@@ -162,6 +166,10 @@ function getConnection() {
   return { type };
 }
 function setStatus(kind, msg) { const s = el('status'); s.className = kind; s.textContent = msg; }
+function applyTheme(t) {
+  document.body.classList.toggle('dark', t === 'dark');
+  const b = el('themeBtn'); if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
+}
 
 function updatePrintPreview() {
   if (!rawTemplate) return;
@@ -220,12 +228,13 @@ async function doPrint() {
     el('printBtn').disabled = true;
     const total = importedRows.length * mult;
     setStatus('info', `Invio in corso (${total} etichette da CSV)...`);
-    const res = await window.zebra.print({
+    const payload = {
       file: current.file, data, copies: el('copies').value, connection: getConnection(),
       enabledIndices: collectEnabledIndices(), rows: importedRows,
-    });
+    };
+    const res = await window.zebra.print(payload);
     el('printBtn').disabled = false;
-    if (res && res.ok) setStatus('ok', `Inviate ${res.count} etichette dal CSV.`);
+    if (res && res.ok) { setStatus('ok', `Inviate ${res.count} etichette dal CSV.`); recordHistory(payload, res.count); }
     else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
     return;
   }
@@ -237,13 +246,15 @@ async function doPrint() {
 
   el('printBtn').disabled = true;
   setStatus('info', `Invio in corso (${total} etichett${total === 1 ? 'a' : 'e'})...`);
-  const res = await window.zebra.print({
+  const payload = {
     file: current.file, data, copies: el('copies').value, connection: getConnection(),
     enabledIndices: collectEnabledIndices(), multiField: multi ? multi.field : null, multiItems: multi ? multi.items : null,
-  });
+  };
+  const res = await window.zebra.print(payload);
   el('printBtn').disabled = false;
   if (res && res.ok) {
     setStatus('ok', `Inviate ${res.count} etichett${res.count === 1 ? 'a' : 'e'}.`);
+    recordHistory(payload, res.count);
     if (el('autoprint').checked && scanFieldName) { const s = el('f_' + scanFieldName); if (s) { s.value = ''; s.focus(); } updatePrintPreview(); }
   } else setStatus('err', 'Errore: ' + (res?.error || 'stampa non riuscita.'));
 }
@@ -267,13 +278,49 @@ async function importCsv() {
 
 function renderTemplateList() {
   const list = el('tplList'); list.innerHTML = '';
-  templates.forEach((t) => {
-    const b = document.createElement('button');
-    b.innerHTML = `${t.name}<br><span class="tag">${t.width_mm}×${t.height_mm}mm ${t.editable ? '· personalizzato' : '· di fabbrica'}</span>`;
-    if (current && t.file === current.file) b.classList.add('active');
-    b.onclick = () => selectTemplate(t.file);
-    list.appendChild(b);
+  const q = tplFilter.trim().toLowerCase();
+  templates
+    .filter((t) => !q || t.name.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q))
+    .forEach((t) => {
+      const b = document.createElement('button');
+      b.innerHTML = `${t.name}<br><span class="tag">${t.width_mm}×${t.height_mm}mm ${t.editable ? '· personalizzato' : '· di fabbrica'}</span>`;
+      if (current && t.file === current.file) b.classList.add('active');
+      b.onclick = () => selectTemplate(t.file);
+      list.appendChild(b);
+    });
+}
+
+/* ---- Storico stampe ---- */
+function recordHistory(payload, count) {
+  const p = { ...payload };
+  if (Array.isArray(p.rows) && p.rows.length > 500) p.rows = p.rows.slice(0, 500);
+  history.unshift({ ts: Date.now(), templateName: current ? current.name : payload.file, count, payload: p });
+  history = history.slice(0, 15);
+  window.zebra.saveSettings({ history });
+  renderHistory();
+}
+function renderHistory() {
+  const box = el('historyBox'), listEl = el('historyList');
+  if (!history.length) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  listEl.innerHTML = '';
+  history.forEach((h, i) => {
+    const d = new Date(h.ts);
+    const when = d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const item = document.createElement('div'); item.className = 'hist-item';
+    item.innerHTML = `<div class="meta"><b>${h.templateName}</b> — ${h.count} etichett${h.count === 1 ? 'a' : 'e'}<br><small>${when}</small></div>`;
+    const btn = document.createElement('button'); btn.className = 'ghost'; btn.textContent = '↻ Ristampa';
+    btn.onclick = () => reprint(i);
+    item.appendChild(btn);
+    listEl.appendChild(item);
   });
+}
+async function reprint(i) {
+  const h = history[i]; if (!h) return;
+  setStatus('info', 'Ristampa in corso...');
+  const res = await window.zebra.print(h.payload);
+  if (res && res.ok) setStatus('ok', `Ristampate ${res.count} etichett${res.count === 1 ? 'a' : 'e'}.`);
+  else setStatus('err', 'Errore: ' + (res?.error || 'ristampa non riuscita.'));
 }
 
 async function selectTemplate(file) {
@@ -298,21 +345,53 @@ function blankTemplate() {
     field_meta: {}, elements: [{ label: 'Testo', type: 'text', x_mm: 3, y_mm: 3, font: '0', height_mm: 3, width_mm: 3, text: '{{testo}}' }] };
 }
 
-function openEditor(raw) {
-  editing = JSON.parse(JSON.stringify(raw));
-  editorSel = null;
-  el('edName').value = (current && current.file ? current.file.replace('.json', '') : editing.name) || 'nuovo-modello';
+function refreshEditorUI() {
   el('edDesc').value = editing.description || '';
   el('edW').value = editing.width_mm; el('edH').value = editing.height_mm;
   el('edDpi').value = String(editing.dpi || 203); el('edTear').value = editing.tear_off ?? 30;
   renderEditorElements(); renderFieldMeta();
   updateEditorPreview();
+}
+function openEditor(raw) {
+  editing = JSON.parse(JSON.stringify(raw));
+  editorSel = null; undoStack = []; redoStack = [];
+  el('edName').value = (current && current.file ? current.file.replace('.json', '') : editing.name) || 'nuovo-modello';
+  refreshEditorUI();
+  updateUndoButtons();
   setMode('editor');
+}
+
+// --- Undo / Redo dell'editor (snapshot su operazioni strutturali) ---
+function pushSnapshot() {
+  if (!editing) return;
+  undoStack.push(JSON.stringify(editing));
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack = [];
+  updateUndoButtons();
+}
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(editing));
+  editing = JSON.parse(undoStack.pop());
+  editorSel = null; refreshEditorUI(); updateUndoButtons();
+}
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(editing));
+  editing = JSON.parse(redoStack.pop());
+  editorSel = null; refreshEditorUI(); updateUndoButtons();
+}
+function updateUndoButtons() {
+  const u = el('undoBtn'), r = el('redoBtn');
+  if (u) u.disabled = undoStack.length === 0;
+  if (r) r.disabled = redoStack.length === 0;
 }
 
 const ELEMENT_PROPS = {
   text: [['text', 'Testo ({{campo}})', 'text', 'full'], ['height_mm', 'Altezza (mm)', 'number'], ['width_mm', 'Larghezza (mm)', 'number'], ['font', 'Font', 'text']],
   barcode128: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
+  code39: [['text', 'Dato ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
+  ean13: [['text', 'Dato: 12-13 cifre ({{campo}})', 'text', 'full'], ['bar_height_mm', 'Altezza barre (mm)', 'number'], ['module_width', 'Spessore modulo', 'number'], ['show_text', 'Mostra testo', 'bool']],
   qrcode: [['text', 'Dato ({{campo}})', 'text', 'full'], ['magnification', 'Ingrandimento (1-10)', 'number']],
   box: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
   line: [['width_mm', 'Larghezza (mm)', 'number'], ['height_mm', 'Altezza (mm)', 'number'], ['thickness_mm', 'Spessore (mm)', 'number']],
@@ -343,9 +422,9 @@ function renderEditorElements() {
     const up = document.createElement('button'); up.className = 'qbtn'; up.textContent = '↑'; up.title = 'Su';
     const dn = document.createElement('button'); dn.className = 'qbtn'; dn.textContent = '↓'; dn.title = 'Giù';
     const del = document.createElement('button'); del.className = 'qbtn'; del.textContent = '✕'; del.title = 'Elimina'; del.style.color = 'var(--err)';
-    up.onclick = () => { readEditorIntoDraft(); if (i > 0) { [editing.elements[i - 1], editing.elements[i]] = [editing.elements[i], editing.elements[i - 1]]; editorSel = i - 1; } renderEditorElements(); drawEditorCanvas(); };
-    dn.onclick = () => { readEditorIntoDraft(); if (i < editing.elements.length - 1) { [editing.elements[i + 1], editing.elements[i]] = [editing.elements[i], editing.elements[i + 1]]; editorSel = i + 1; } renderEditorElements(); drawEditorCanvas(); };
-    del.onclick = () => { readEditorIntoDraft(); editing.elements.splice(i, 1); editorSel = null; renderEditorElements(); drawEditorCanvas(); };
+    up.onclick = () => { readEditorIntoDraft(); pushSnapshot(); if (i > 0) { [editing.elements[i - 1], editing.elements[i]] = [editing.elements[i], editing.elements[i - 1]]; editorSel = i - 1; } renderEditorElements(); drawEditorCanvas(); };
+    dn.onclick = () => { readEditorIntoDraft(); pushSnapshot(); if (i < editing.elements.length - 1) { [editing.elements[i + 1], editing.elements[i]] = [editing.elements[i], editing.elements[i + 1]]; editorSel = i + 1; } renderEditorElements(); drawEditorCanvas(); };
+    del.onclick = () => { readEditorIntoDraft(); pushSnapshot(); editing.elements.splice(i, 1); editorSel = null; renderEditorElements(); drawEditorCanvas(); };
 
     head.append(caret, title, up, dn, del);
     row.appendChild(head);
@@ -353,8 +432,8 @@ function renderEditorElements() {
     if (open) {
       const bar = document.createElement('div'); bar.className = 'elhead'; bar.style.marginTop = '8px';
       const typeSel = document.createElement('select');
-      ['text', 'barcode128', 'qrcode', 'box', 'line'].forEach((t) => { const o = document.createElement('option'); o.value = t; o.textContent = t; if (t === elem.type) o.selected = true; typeSel.appendChild(o); });
-      typeSel.onchange = () => { readEditorIntoDraft(); editing.elements[i].type = typeSel.value; renderEditorElements(); drawEditorCanvas(); };
+      ['text', 'barcode128', 'code39', 'ean13', 'qrcode', 'box', 'line'].forEach((t) => { const o = document.createElement('option'); o.value = t; o.textContent = t; if (t === elem.type) o.selected = true; typeSel.appendChild(o); });
+      typeSel.onchange = () => { readEditorIntoDraft(); pushSnapshot(); editing.elements[i].type = typeSel.value; renderEditorElements(); drawEditorCanvas(); };
       const lbl = document.createElement('input'); lbl.type = 'text'; lbl.placeholder = 'Etichetta elemento'; lbl.value = elem.label || ''; lbl.dataset.prop = 'label'; lbl.style.flex = '1';
       const en = document.createElement('label'); en.className = 'checkbox'; en.style.margin = '0';
       const enc = document.createElement('input'); enc.type = 'checkbox'; enc.checked = elem.enabled !== false; enc.dataset.prop = 'enabled';
@@ -675,6 +754,40 @@ async function init() {
   el('importTplBtn').addEventListener('click', importTemplate);
   el('testConnBtn').addEventListener('click', testConnection);
   el('importCsvBtn').addEventListener('click', importCsv);
+  el('undoBtn').addEventListener('click', undo);
+  el('redoBtn').addEventListener('click', redo);
+
+  // Ricerca template
+  el('tplSearch').addEventListener('input', () => { tplFilter = el('tplSearch').value; renderTemplateList(); });
+
+  // Tema chiaro/scuro
+  applyTheme(settings.theme || 'light');
+  el('themeBtn').addEventListener('click', () => {
+    const nt = document.body.classList.contains('dark') ? 'light' : 'dark';
+    applyTheme(nt); window.zebra.saveSettings({ theme: nt });
+  });
+
+  // Legenda scorciatoie
+  const showHelp = (v) => { el('helpModal').style.display = v ? 'flex' : 'none'; };
+  el('helpBtn').addEventListener('click', () => showHelp(true));
+  el('helpClose').addEventListener('click', () => showHelp(false));
+  el('helpModal').addEventListener('click', (e) => { if (e.target === el('helpModal')) showHelp(false); });
+
+  // Storico stampe
+  history = Array.isArray(settings.history) ? settings.history : [];
+  renderHistory();
+
+  // Scorciatoie da tastiera
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const inEditor = el('editorView').style.display !== 'none';
+    const k = e.key.toLowerCase();
+    if (k === 'p') { e.preventDefault(); if (!inEditor) doPrint(); }
+    else if (k === 's') { if (inEditor) { e.preventDefault(); saveEditor(false); } }
+    else if (k === 'f') { e.preventDefault(); el('tplSearch').focus(); }
+    else if (k === 'z') { if (inEditor) { e.preventDefault(); undo(); } }
+    else if (k === 'y') { if (inEditor) { e.preventDefault(); redo(); } }
+  });
   el('addFieldMetaBtn').addEventListener('click', () => addFieldMetaRow('', { type: 'select', options: [] }));
 
   // Controlli griglia / snap dell'anteprima interattiva
@@ -688,10 +801,13 @@ async function init() {
 
   document.querySelectorAll('[data-add]').forEach((btn) => btn.addEventListener('click', () => {
     readEditorIntoDraft();
+    pushSnapshot();
     const t = btn.dataset.add;
     const defaults = {
       text: { label: 'Testo', type: 'text', x_mm: 3, y_mm: 3, font: '0', height_mm: 3, width_mm: 3, text: '{{campo}}' },
       barcode128: { label: 'Barcode', type: 'barcode128', x_mm: 3, y_mm: 3, bar_height_mm: 10, module_width: 2, show_text: false, text: '{{campo}}' },
+      code39: { label: 'Code39', type: 'code39', x_mm: 3, y_mm: 3, bar_height_mm: 10, module_width: 2, show_text: true, text: '{{campo}}' },
+      ean13: { label: 'EAN-13', type: 'ean13', x_mm: 3, y_mm: 3, bar_height_mm: 12, module_width: 2, show_text: true, text: '{{campo}}' },
       qrcode: { label: 'QR code', type: 'qrcode', x_mm: 3, y_mm: 3, magnification: 4, text: '{{campo}}' },
       box: { label: 'Riquadro', type: 'box', x_mm: 2, y_mm: 2, width_mm: 40, height_mm: 20, thickness_mm: 0.4 },
       line: { label: 'Linea', type: 'line', x_mm: 2, y_mm: 10, width_mm: 40, height_mm: 0, thickness_mm: 0.4 },

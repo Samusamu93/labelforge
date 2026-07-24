@@ -85,6 +85,23 @@
         }
         return out;
       }
+      case 'code39':
+      case 'ean13': {
+        const text = fillPlaceholders(el.text, data) || (el.type === 'ean13' ? '000000000000' : '000');
+        const h = el.bar_height_mm || 10;
+        const moduleMm = (el.module_width || 2) / (dpi / 25.4);
+        let out = '', w = 20, label = text;
+        if (typeof window !== 'undefined' && window.Barcode) {
+          const r = el.type === 'ean13' ? window.Barcode.ean13SVG(text, x, y, h, moduleMm)
+                                        : window.Barcode.code39SVG(text, x, y, h, moduleMm);
+          if (r) { out = r.svg; w = r.width; if (r.digits) label = r.digits; }
+        }
+        if (!out) out = barcodeBars(text, x, y, Math.max(20, text.length * 2.2), h);
+        if (el.show_text !== false) {
+          out += `<text x="${(x + w / 2).toFixed(2)}" y="${(y + h + 3).toFixed(2)}" font-size="2.6" font-family="monospace" text-anchor="middle" fill="#111">${esc(label)}</text>`;
+        }
+        return out;
+      }
       case 'qrcode': {
         const text = fillPlaceholders(el.text, data);
         const size = (el.magnification || 4) * 5; // ~mm indicativi
@@ -131,9 +148,9 @@
         const text = fillPlaceholders(el.text, data) || 'testo';
         const hmm = el.height_mm || (el.height_dots ? (el.height_dots / dpi) * 25.4 : 3);
         h = hmm; w = Math.max(6, text.length * hmm * 0.62);
-      } else if (el.type === 'barcode128') {
+      } else if (el.type === 'barcode128' || el.type === 'code39' || el.type === 'ean13') {
         const text = fillPlaceholders(el.text, data);
-        h = el.bar_height_mm || 10; w = Math.max(20, (text.length || 6) * 2.2);
+        h = el.bar_height_mm || 10; w = Math.max(20, (text.length || 6) * 2.4);
         if (el.show_text !== false) h += 3.5;
       } else if (el.type === 'qrcode') {
         w = h = (el.magnification || 4) * 5;
