@@ -324,6 +324,15 @@
       <div class="field" id="wrapPrinter"><label>Stampante</label><select id="printerSelect"></select></div>
       <div class="field" id="wrapIp" style="display:none;"><label>Indirizzo IP</label><input type="text" id="ipInput" placeholder="192.168.1.50" /></div>
       <div class="field" id="wrapUsb" style="display:none;"><label>Porta USB</label><input type="text" id="usbInput" placeholder="USB001" /></div>
+      <div class="field"><label>Linguaggio predefinito (nuovi modelli)</label>
+        <select id="setLang">
+          <option value="zpl">ZPL (Zebra) — testato</option>
+          <option value="tspl">TSPL (TSC) — sperimentale</option>
+          <option value="epl">EPL (Eltron) — sperimentale</option>
+          <option value="cpcl">CPCL (Zebra mobile) — sperimentale</option>
+          <option value="ezpl">EZPL (Godex) — sperimentale</option>
+        </select>
+      </div>
       <button class="ghost" id="testConnBtn">🔌 Prova connessione</button>
       <div id="connStatus" style="font-size:12px; margin-top:8px;"></div>
 
@@ -347,6 +356,13 @@
       <div class="field" style="max-width:160px;"><label>Passo griglia (mm)</label>
         <select id="setStep"><option value="0.5">0,5</option><option value="1">1</option><option value="2">2</option><option value="5">5</option></select>
       </div>
+
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Generale</h3>
+      <div class="toolbar" style="margin:0;">
+        <button class="ghost" id="openFolderBtn">📁 Apri cartella modelli</button>
+        <button class="ghost danger" id="resetSettingsBtn">↺ Ripristina impostazioni</button>
+      </div>
+      <p class="mini" id="appVersion" style="color:var(--muted);margin:12px 0 0;">LabelForge</p>
     </div>
   </div>
 

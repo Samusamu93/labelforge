@@ -314,6 +314,15 @@ ipcMain.handle('dm-image', async (_e, text) => {
 
 ipcMain.handle('get-settings', () => loadSettings());
 ipcMain.handle('save-settings', (_e, obj) => saveSettings(obj));
+ipcMain.handle('reset-settings', () => {
+  try { fs.writeFileSync(SETTINGS_FILE, '{}', 'utf8'); return { ok: true }; }
+  catch (e) { return { ok: false, error: e.message }; }
+});
+ipcMain.handle('app-version', () => app.getVersion());
+ipcMain.handle('open-templates-folder', async () => {
+  try { await shell.openPath(USER_TEMPLATES_DIR); return { ok: true }; }
+  catch (e) { return { ok: false, error: e.message }; }
+});
 ipcMain.handle('print', async (_e, payload) => {
   try { return await doPrint(payload); }
   catch (err) { return { ok: false, error: err.message }; }

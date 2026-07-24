@@ -21,6 +21,7 @@ let redoStack = [];        // editor: stati rifatti
 let defaultCopies = 1;     // copie predefinite (impostazioni)
 let printDarkness = '';    // intensità stampa (~SD) globale
 let printSpeed = '';       // velocità stampa (^PR) globale
+let defaultLanguage = 'zpl'; // linguaggio predefinito per i nuovi modelli
 
 function fillPh(str, data) {
   if (typeof str !== 'string') return '';
@@ -193,6 +194,7 @@ function applySettings(s) {
   defaultCopies = Number(s.defaultCopies) || 1;
   printDarkness = (s.darkness === undefined || s.darkness === null) ? '' : s.darkness;
   printSpeed = (s.speed === undefined || s.speed === null) ? '' : s.speed;
+  defaultLanguage = s.defaultLanguage || 'zpl';
   editorGrid.show = s.gridShow !== false;
   editorGrid.snap = s.gridSnap !== false;
   editorGrid.step = Number(s.gridStep) || 0.5;
@@ -209,6 +211,7 @@ function fillSettingsModal() {
   el('setCopies').value = defaultCopies || 1;
   el('setDarkness').value = printDarkness === '' ? '' : printDarkness;
   el('setSpeed').value = printSpeed === '' ? '' : printSpeed;
+  el('setLang').value = defaultLanguage;
   el('setGrid').checked = editorGrid.show;
   el('setSnap').checked = editorGrid.snap;
   el('setStep').value = String(editorGrid.step);
@@ -222,6 +225,7 @@ function commitSettings() {
   defaultCopies = Math.max(1, Number(el('setCopies').value) || 1);
   printDarkness = el('setDarkness').value === '' ? '' : Math.max(0, Math.min(30, Number(el('setDarkness').value)));
   printSpeed = el('setSpeed').value === '' ? '' : Math.max(1, Math.min(6, Number(el('setSpeed').value)));
+  defaultLanguage = el('setLang').value;
   editorGrid.show = el('setGrid').checked;
   editorGrid.snap = el('setSnap').checked;
   editorGrid.step = Number(el('setStep').value) || 0.5;
@@ -230,7 +234,7 @@ function commitSettings() {
   if (el('gridStep')) el('gridStep').value = String(editorGrid.step);
   window.zebra.saveSettings({
     theme, autoprint: el('autoprint').checked, defaultCopies, darkness: printDarkness, speed: printSpeed,
-    gridShow: editorGrid.show, gridSnap: editorGrid.snap, gridStep: editorGrid.step,
+    defaultLanguage, gridShow: editorGrid.show, gridSnap: editorGrid.snap, gridStep: editorGrid.step,
   });
   if (el('editorView').style.display !== 'none') drawEditorCanvas();
 }
@@ -408,7 +412,7 @@ async function selectTemplate(file) {
 /* ============================ EDITOR ============================ */
 
 function blankTemplate() {
-  return { name: 'nuovo-modello', description: '', dpi: 203, width_mm: 51, height_mm: 25, tear_off: 30,
+  return { name: 'nuovo-modello', description: '', language: defaultLanguage || 'zpl', dpi: 203, width_mm: 51, height_mm: 25, tear_off: 30,
     field_meta: {}, elements: [{ label: 'Testo', type: 'text', x_mm: 3, y_mm: 3, font: '0', height_mm: 3, width_mm: 3, text: '{{testo}}' }] };
 }
 
@@ -853,8 +857,22 @@ async function init() {
   el('openSettingsBtn').addEventListener('click', () => showSettings(true));
   el('settingsClose').addEventListener('click', () => showSettings(false));
   el('settingsModal').addEventListener('click', (e) => { if (e.target === el('settingsModal')) showSettings(false); });
-  ['setTheme', 'setAutoprint', 'setCopies', 'setDarkness', 'setSpeed', 'setGrid', 'setSnap', 'setStep']
+  ['setTheme', 'setAutoprint', 'setCopies', 'setDarkness', 'setSpeed', 'setLang', 'setGrid', 'setSnap', 'setStep']
     .forEach((id) => el(id).addEventListener('change', commitSettings));
+
+  // Generale: apri cartella, ripristina, versione
+  el('openFolderBtn').addEventListener('click', () => window.zebra.openTemplatesFolder());
+  el('resetSettingsBtn').addEventListener('click', async () => {
+    if (!confirm('Ripristinare tutte le impostazioni ai valori predefiniti?')) return;
+    await window.zebra.resetSettings();
+    location.reload();
+  });
+  window.zebra.appVersion().then((v) => { const e = el('appVersion'); if (e) e.textContent = 'LabelForge v' + v; }).catch(() => {});
+
+  // Esc chiude le finestre
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { el('settingsModal').style.display = 'none'; el('helpModal').style.display = 'none'; }
+  });
 
   // Legenda scorciatoie
   const showHelp = (v) => { el('helpModal').style.display = v ? 'flex' : 'none'; };
