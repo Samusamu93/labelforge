@@ -11,7 +11,7 @@ const path = require('path');
 const { execFile } = require('child_process');
 const QRCode = require('qrcode');
 const bwipjs = require('bwip-js');
-const { buildZpl, extractPlaceholders } = require('../lib/zpl');
+const { buildLabel, extractPlaceholders } = require('../lib/render');
 const { sendNetwork, sendWindowsPrinterByName, sendUSBWindows, sendUSBUnix } = require('../lib/print');
 
 // --- Cartelle template ---
@@ -183,7 +183,7 @@ async function doPrint({ file, data, copies, connection, enabledIndices, multiFi
 
   const opts = {};
   if (Array.isArray(enabledIndices)) opts.enabledIndices = enabledIndices;
-  const zpl = buildZpl(template, dataList, opts);
+  const zpl = buildLabel(template, dataList, opts);
 
   if (connection.type === 'printer') {
     if (!connection.printer) throw new Error('Seleziona una stampante.');

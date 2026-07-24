@@ -361,6 +361,7 @@ function refreshEditorUI() {
   el('edDesc').value = editing.description || '';
   el('edW').value = editing.width_mm; el('edH').value = editing.height_mm;
   el('edDpi').value = String(editing.dpi || 203); el('edTear').value = editing.tear_off ?? 30;
+  if (el('edLang')) el('edLang').value = editing.language || 'zpl';
   renderEditorElements(); renderFieldMeta();
   updateEditorPreview();
 }
@@ -532,6 +533,7 @@ function readEditorIntoDraft() {
   editing.width_mm = Number(el('edW').value) || 0;
   editing.height_mm = Number(el('edH').value) || 0;
   const tear = el('edTear').value; editing.tear_off = tear === '' ? undefined : Number(tear);
+  if (el('edLang')) editing.language = el('edLang').value;
 
   // solo l'elemento aperto (se presente)
   const openRow = document.querySelector('#edElements .elrow.open');
@@ -810,7 +812,7 @@ async function init() {
   el('gridStep').addEventListener('change', () => { editorGrid.step = Number(el('gridStep').value); drawEditorCanvas(); });
 
   // Proprietà editor → anteprima live
-  ['edName', 'edDesc', 'edW', 'edH', 'edDpi', 'edTear'].forEach((id) =>
+  ['edName', 'edDesc', 'edW', 'edH', 'edDpi', 'edTear', 'edLang'].forEach((id) =>
     el(id).addEventListener('input', debounce(() => { readEditorIntoDraft(); updateEditorPreview(); })));
 
   document.querySelectorAll('[data-add]').forEach((btn) => btn.addEventListener('click', () => {

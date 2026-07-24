@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
-const { buildZpl } = require('./lib/zpl');
+const { buildLabel } = require('./lib/render');
 const { sendNetwork, sendUSBWindows, sendUSBUnix, sendWindowsPrinterByName } = require('./lib/print');
 
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
@@ -142,7 +142,7 @@ async function cmdPrint(args) {
   const template = loadTemplate(args.template);
   const dataList = loadDataList(args);
   const copies = args.copies ? Number(args.copies) : 1;
-  const zpl = buildZpl(template, dataList, { copiesPerLabel: copies });
+  const zpl = buildLabel(template, dataList, { copiesPerLabel: copies });
 
   if (args.out) {
     fs.writeFileSync(args.out, zpl);
@@ -180,7 +180,7 @@ async function cmdTest(args) {
     citta_cap: '50100 Firenze (FI)',
     ordine_id: 'ORD-0001',
   };
-  const zpl = buildZpl(template, [data]);
+  const zpl = buildLabel(template, [data]);
   await sendZpl(zpl, args);
 }
 

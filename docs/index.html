@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabelForge — Stampa etichette ZPL per Zebra</title>
+  <meta name="description" content="LabelForge: app desktop e CLI per stampare etichette ZPL su stampanti Zebra (ZD410) via rete o USB, con editor visuale, anteprima live, barcode e QR reali." />
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#3b82f6; --accent2:#22d3ee; --border:#334155; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+    a { color:var(--accent2); }
+    .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+    header { text-align:center; padding:48px 0 24px; }
+    header img { width:min(760px,92%); }
+    .tagline { font-size:20px; color:var(--text); margin:18px 0 6px; font-weight:600; }
+    .sub { color:var(--muted); max-width:640px; margin:0 auto 22px; }
+    .btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+    .btn { display:inline-block; padding:12px 22px; border-radius:10px; font-weight:700; text-decoration:none; }
+    .btn.primary { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#06121f; }
+    .btn.ghost { border:1px solid var(--border); color:var(--text); }
+    .badges { margin-top:18px; }
+    .badges img { height:22px; margin:0 3px; vertical-align:middle; }
+    section { padding:34px 0; border-top:1px solid var(--border); }
+    h2 { font-size:22px; margin:0 0 18px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+    .feat { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+    .feat h3 { margin:0 0 6px; font-size:16px; }
+    .feat p { margin:0; color:var(--muted); font-size:14px; }
+    .shot { text-align:center; }
+    .shot img { width:100%; max-width:900px; border:1px solid var(--border); border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,.4); }
+    footer { text-align:center; color:var(--muted); padding:30px 0 50px; font-size:14px; }
+    code { background:#0b1220; border:1px solid var(--border); border-radius:5px; padding:1px 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="banner.svg" alt="LabelForge" />
+      <p class="tagline">Stampa etichette ZPL su stampanti Zebra — app desktop + CLI</p>
+      <p class="sub">Progetta le etichette visivamente, compila i campi o scansionali con un lettore di codici a barre, e stampa via rete o USB. Editor drag &amp; drop, anteprima live con barcode e QR reali. Nessuna dipendenza a pagamento.</p>
+      <div class="btns">
+        <a class="btn primary" href="https://github.com/Samusamu93/labelforge/releases/latest">⬇ Scarica l'ultima versione</a>
+        <a class="btn ghost" href="https://github.com/Samusamu93/labelforge">Codice su GitHub</a>
+      </div>
+      <div class="badges">
+        <img src="https://img.shields.io/github/v/release/Samusamu93/labelforge" alt="release" />
+        <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT" />
+        <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue" alt="platform" />
+      </div>
+    </header>
+
+    <section class="shot">
+      <img src="Screenshot.png" alt="LabelForge — interfaccia" />
+    </section>
+
+    <section>
+      <h2>✨ Cosa fa</h2>
+      <div class="grid">
+        <div class="feat"><h3>🖨️ Rete o USB</h3><p>Stampa via porta di rete 9100, stampante Windows per nome (qualsiasi porta) o device USB su Linux/Mac.</p></div>
+        <div class="feat"><h3>🎨 Editor visuale</h3><p>Trascina, ridimensiona e allinea gli elementi con snap alla griglia. Anteprima live con codici reali.</p></div>
+        <div class="feat"><h3>🔠 Molti codici</h3><p>Testo, Code128, Code39, Code93, EAN‑13, QR Code e DataMatrix. Misure in mm, 203/300 dpi.</p></div>
+        <div class="feat"><h3>⌨️ Scansiona e stampa</h3><p>Stampa automatica dopo la scansione. Import CSV per stampe in blocco (una etichetta per riga).</p></div>
+        <div class="feat"><h3>🧩 Campi dinamici</h3><p>Campi come testo, menu a tendina o liste con quantità (es. una etichetta per taglia/variante).</p></div>
+        <div class="feat"><h3>💾 Comodo</h3><p>Storico con ristampa, ricerca modelli, tema chiaro/scuro, scorciatoie e impostazioni ricordate.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>🚀 Come iniziare</h2>
+      <p>Scarica l'app per il tuo sistema dalla pagina delle <a href="https://github.com/Samusamu93/labelforge/releases/latest">Release</a>, oppure avviala dai sorgenti:</p>
+      <p><code>npm install</code> &nbsp;→&nbsp; <code>npm start</code></p>
+      <p class="sub" style="margin:14px 0 0;">Compatibile con le stampanti Zebra ZPL (testata su ZD410). Documentazione completa nel <a href="https://github.com/Samusamu93/labelforge#readme">README</a>.</p>
+    </section>
+
+    <footer>
+      LabelForge — software libero con licenza MIT · <a href="https://github.com/Samusamu93/labelforge">github.com/Samusamu93/labelforge</a>
+    </footer>
+  </div>
+</body>
+</html>
