@@ -87,9 +87,58 @@
       <p class="sub" style="margin:14px 0 0;">Compatibile con le stampanti Zebra ZPL (testata su ZD410). Documentazione completa nel <a href="https://github.com/dextsamu/labelforge#readme">README</a>.</p>
     </section>
 
+    <section>
+      <h2>🔌 Prova l'API di stampa</h2>
+      <p class="sub" style="margin:0 0 12px;">Con il print server attivo (nell'app: ⚙️ → Print server, oppure <code>node cli.js serve</code>), compila e invia una richiesta di stampa. La chiamata `curl` si aggiorna in tempo reale sotto.</p>
+      <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px;">
+        <label style="font-size:13px;">Server URL<input id="apiUrl" value="http://localhost:9110" style="width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0b1220;color:var(--text);"></label>
+        <label style="font-size:13px;">Template<input id="apiTpl" value="product-51x25" style="width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0b1220;color:var(--text);"></label>
+        <label style="font-size:13px;">Printer / IP / USB<input id="apiPrinter" value="Zebra" style="width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0b1220;color:var(--text);"></label>
+        <label style="font-size:13px;">Token (opz.)<input id="apiToken" placeholder="—" style="width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0b1220;color:var(--text);"></label>
+        <label style="font-size:13px;grid-column:1/-1;">Data (JSON)<textarea id="apiData" rows="3" style="width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0b1220;color:var(--text);font-family:Consolas,monospace;">{ "title": "Item", "code": "12345" }</textarea></label>
+      </div>
+      <div class="btns" style="justify-content:flex-start;margin-top:12px;">
+        <button class="btn primary" id="apiSend" type="button">Invia stampa</button>
+      </div>
+      <p id="apiResult" style="font-size:13px;margin-top:10px;"></p>
+      <pre style="background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow:auto;font-size:12px;"><code id="apiCurl"></code></pre>
+      <p class="sub" style="font-size:12px;">Nota: se apri questa pagina via HTTPS, il browser può bloccare le chiamate a <code>http://localhost</code> (mixed content). In tal caso copia il comando <code>curl</code> o usa la pagina in locale. API completa: <a href="https://github.com/dextsamu/labelforge/blob/main/docs/INTEGRATION.md">docs/INTEGRATION.md</a>.</p>
+    </section>
+
     <footer>
       LabelForge — software libero con licenza MIT · <a href="https://github.com/dextsamu/labelforge">github.com/dextsamu/labelforge</a>
     </footer>
   </div>
+  <script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      function buildBody() {
+        var body = { template: $('apiTpl').value.trim() };
+        try { body.data = JSON.parse($('apiData').value || '{}'); } catch (e) { body.data = {}; }
+        var p = $('apiPrinter').value.trim();
+        if (/^\d+\.\d+\.\d+\.\d+$/.test(p)) body.ip = p; else if (/^USB/i.test(p)) body.usb = p; else if (p) body.printer = p;
+        return body;
+      }
+      function refresh() {
+        var url = $('apiUrl').value.replace(/\/$/, '') + '/print';
+        var body = JSON.stringify(buildBody());
+        var tok = $('apiToken').value.trim();
+        var h = tok ? ' -H "Authorization: Bearer ' + tok + '"' : '';
+        $('apiCurl').textContent = "curl -X POST " + url + " -H \"Content-Type: application/json\"" + h + " -d '" + body + "'";
+      }
+      ['apiUrl', 'apiTpl', 'apiPrinter', 'apiToken', 'apiData'].forEach(function (id) { $(id).addEventListener('input', refresh); });
+      refresh();
+      $('apiSend').addEventListener('click', function () {
+        var res = $('apiResult'); res.style.color = '#94a3b8'; res.textContent = 'Invio...';
+        var tok = $('apiToken').value.trim();
+        var headers = { 'Content-Type': 'application/json' };
+        if (tok) headers['Authorization'] = 'Bearer ' + tok;
+        fetch($('apiUrl').value.replace(/\/$/, '') + '/print', { method: 'POST', headers: headers, body: JSON.stringify(buildBody()) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { res.style.color = j.ok ? '#22c55e' : '#f87171'; res.textContent = j.ok ? ('✓ Inviate ' + j.count + ' etichette.') : ('✗ ' + (j.error || 'errore')); })
+          .catch(function (e) { res.style.color = '#f87171'; res.textContent = '✗ Nessuna risposta (server spento o bloccato dal browser). Copia il comando curl. [' + e.message + ']'; });
+      });
+    })();
+  </script>
 </body>
 </html>
