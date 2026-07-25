@@ -214,6 +214,10 @@ function fillSettingsModal() {
   el('setDarkness').value = printDarkness === '' ? '' : printDarkness;
   el('setSpeed').value = printSpeed === '' ? '' : printSpeed;
   el('setLang').value = defaultLanguage;
+  el('srvEnable').checked = !!settings.serverEnabled;
+  el('srvPort').value = settings.serverPort || 9110;
+  el('srvToken').value = settings.serverToken || '';
+  refreshServerStatus();
   el('setGrid').checked = editorGrid.show;
   el('setSnap').checked = editorGrid.snap;
   el('setStep').value = String(editorGrid.step);
@@ -261,6 +265,21 @@ async function testConnection() {
   const r = await window.zebra.testConnection(getConnection());
   box.style.color = r.ok ? '#16a34a' : '#dc2626';
   box.textContent = (r.ok ? '✓ ' : '✗ ') + (r.ok ? r.message : (r.error || 'errore'));
+}
+
+async function refreshServerStatus() {
+  const box = el('srvStatus'); if (!box) return;
+  const st = await window.zebra.serverStatus();
+  box.textContent = st.running ? t('set.serverOn', { url: st.url }) : t('set.serverOff');
+  box.style.color = st.running ? '#16a34a' : 'var(--muted)';
+}
+async function toggleServer() {
+  const enabled = el('srvEnable').checked;
+  window.zebra.saveSettings({ serverEnabled: enabled, serverPort: Number(el('srvPort').value) || 9110, serverToken: el('srvToken').value.trim() });
+  settings.serverEnabled = enabled; settings.serverPort = Number(el('srvPort').value) || 9110; settings.serverToken = el('srvToken').value.trim();
+  if (enabled) { const r = await window.zebra.serverStart(); if (!r.ok) el('srvStatus').textContent = 'Errore: ' + r.error; }
+  else await window.zebra.serverStop();
+  refreshServerStatus();
 }
 
 async function runDiagnostics() {
@@ -944,6 +963,7 @@ async function init() {
     .forEach((id) => el(id).addEventListener('change', commitSettings));
 
   // Generale: apri cartella, ripristina, versione
+  ['srvEnable', 'srvPort', 'srvToken'].forEach((id) => el(id).addEventListener('change', toggleServer));
   el('openFolderBtn').addEventListener('click', () => window.zebra.openTemplatesFolder());
   el('resetSettingsBtn').addEventListener('click', async () => {
     if (!confirm(t('dyn.confirmReset'))) return;

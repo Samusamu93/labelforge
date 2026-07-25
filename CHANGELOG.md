@@ -2,6 +2,12 @@
 
 Tutte le modifiche rilevanti a LabelForge. / All notable changes to LabelForge.
 
+## v1.16.0
+- 🔌 **Integrazione**: print server HTTP (`POST /print`, `GET /templates`, `GET /health`, token opzionale, CORS)
+  e **watch-folder** (deposita un file JSON → stampa). Avviabili da CLI (`serve`/`watch`) o dal pannello
+  Impostazioni dell'app (toggle "Print server"). / HTTP print server + watch-folder integration.
+- 📖 Documentazione tecnica d'integrazione: `docs/INTEGRATION.md` (API, esempi, schema del job).
+
 ## v1.14.0
 - 🌍 **Interfaccia bilingue** English (predefinito) + Italiano, con selettore lingua nelle Impostazioni. / Bilingual UI (English default + Italian), switchable in Settings.
 - 🎨 Icona dell'app dedicata (exe, installer, finestra). / Dedicated app icon.

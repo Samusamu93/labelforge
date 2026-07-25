@@ -6,6 +6,7 @@ const path = require('path');
 const { execFile } = require('child_process');
 const { buildLabel } = require('./lib/render');
 const { sendNetwork, sendUSBWindows, sendUSBUnix, sendWindowsPrinterByName } = require('./lib/print');
+const { startServer, startWatch } = require('./lib/server');
 
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
 
@@ -22,6 +23,12 @@ Uso:
   node cli.js list-printers
   node cli.js calibrate (--ip <indirizzo> | --printer <NOME> | --usb <PORTA>)
   node cli.js test (--ip <indirizzo> | --printer <NOME> | --usb <PORTA>) [--template <nome>]
+
+  node cli.js serve [--port 9110] [--host 127.0.0.1] [--token SEGRETO]
+                    [--printer <NOME> | --ip <indirizzo> | --usb <PORTA>]
+      Avvia un print server HTTP: altri programmi stampano con POST /print.
+  node cli.js watch [--dir ./inbox] [--printer <NOME> | --ip <indirizzo> | --usb <PORTA>]
+      Sorveglia una cartella: ogni file .json depositato viene stampato.
 
 Esempi:
   node cli.js print --template product-51x25 --set title="Vite M6" --set subtitle="Confezione 100pz" --set code=8012345 --ip 192.168.1.50
@@ -184,6 +191,37 @@ async function cmdTest(args) {
   await sendZpl(zpl, args);
 }
 
+// Connessione predefinita per serve/watch dai flag CLI (opzionale).
+function defaultConnectionFromArgs(args) {
+  if (args.printer) return { type: 'printer', printer: args.printer };
+  if (args.ip) return { type: 'ip', ip: args.ip, port: args.port ? Number(args.port) : 9100 };
+  if (args.usb) return { type: 'usb', usb: args.usb };
+  return null;
+}
+
+function cmdServe(args) {
+  const port = args.port ? Number(args.port) : 9110;
+  const host = args.host || '127.0.0.1';
+  const conn = defaultConnectionFromArgs(args);
+  startServer({ port, host, templatesDir: TEMPLATES_DIR, token: args.token, defaults: conn ? { connection: conn } : {} });
+  console.log(`Print server LabelForge in ascolto su http://${host}:${port}`);
+  console.log(`  GET  /health        stato del server`);
+  console.log(`  GET  /templates     elenco modelli`);
+  console.log(`  POST /print         { "template":"...", "data":{...}, "printer|ip|usb":"..." }`);
+  if (conn) console.log(`  Connessione predefinita: ${JSON.stringify(conn)}`);
+  if (args.token) console.log(`  Autenticazione: header "Authorization: Bearer ${args.token}" oppure "X-Api-Key: ${args.token}"`);
+  console.log('Premi Ctrl+C per fermare.');
+}
+
+function cmdWatch(args) {
+  const dir = path.resolve(args.dir || './inbox');
+  const conn = defaultConnectionFromArgs(args);
+  startWatch({ dir, templatesDir: TEMPLATES_DIR, defaults: conn ? { connection: conn } : {} });
+  console.log(`Watch attivo sulla cartella: ${dir}`);
+  console.log('Deposita file .json (es. { "template":"product-51x25", "data":{...}, "printer":"Zebra" }).');
+  console.log('I file stampati vanno in printed/, gli errori in errors/. Premi Ctrl+C per fermare.');
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const cmd = args._[0];
@@ -204,6 +242,12 @@ async function main() {
         break;
       case 'test':
         await cmdTest(args);
+        break;
+      case 'serve':
+        cmdServe(args);
+        break;
+      case 'watch':
+        cmdWatch(args);
         break;
       default:
         printUsage();

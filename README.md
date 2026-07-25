@@ -40,6 +40,7 @@ Design labels visually, fill fields (or scan them), and print over network or US
 | 📄 **CSV batch print** | Import a CSV and print one label per row (columns map to `{{fields}}`). |
 | 🔁 **Share templates** | Export/import templates as `.json`; test the printer connection before printing. |
 | 🕘 **History & shortcuts** | Reprint from print history, template search, dark/light theme, editor undo/redo and keyboard shortcuts (Ctrl+P/S/F/Z/Y). |
+| 🔌 **Integration** | Print from other programs via an HTTP print server or a watch‑folder (drop a JSON job). |
 | 🌍 **Bilingual UI** | English (default) and Italian, switchable in Settings. |
 | 💾 **Remembers everything** | Printer, last template, theme, language and preferences saved between sessions. |
 | 📦 **Ship as an app** | Package to a Windows `.exe`; a desktop shortcut is created automatically on first run. |
@@ -97,6 +98,35 @@ git push origin v1.0.0
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Open an issue (templates provided)
 before large changes. The packaged app is not code‑signed, so Windows SmartScreen may warn on first
 run; signing and auto‑update are optional.
+
+## 🔌 Integration (print from other programs)
+
+Other apps can print through LabelForge without the GUI:
+
+**HTTP print server** — start it, then any program (script, web app, another PC) sends a POST:
+
+```bash
+node cli.js serve --port 9110 --printer "Zebra"     # or --ip 192.168.1.50
+```
+```bash
+curl -X POST http://localhost:9110/print -H "Content-Type: application/json" \
+  -d '{"template":"product-51x25","data":{"title":"Item","code":"12345"},"printer":"Zebra"}'
+```
+Endpoints: `GET /health`, `GET /templates`, `POST /print`. Batch: send `"rows":[{...},{...}]`.
+Optional auth with `--token SECRET` (`Authorization: Bearer SECRET` or `X-Api-Key: SECRET`).
+Connection can be set per‑request (`printer`/`ip`/`usb`) or as a server default via CLI flags.
+
+**Watch folder** — drop a `.json` job file into a folder and it prints automatically:
+
+```bash
+node cli.js watch --dir ./inbox --printer "Zebra"
+```
+Each file like `{"template":"product-51x25","data":{...}}` is printed, then moved to `printed/`
+(or `errors/` on failure). Great for systems that can only write files.
+
+**Plain CLI** — `node cli.js print --template ... --set field=value --printer "Zebra"` for one‑off calls.
+
+📖 Full API and job schema: **[docs/INTEGRATION.md](docs/INTEGRATION.md)**.
 
 ## 🖨️ Printer languages & compatibility
 

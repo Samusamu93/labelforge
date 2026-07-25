@@ -19,5 +19,8 @@ contextBridge.exposeInMainWorld('zebra', {
   resetSettings: () => ipcRenderer.invoke('reset-settings'),
   appVersion: () => ipcRenderer.invoke('app-version'),
   openTemplatesFolder: () => ipcRenderer.invoke('open-templates-folder'),
+  serverStart: () => ipcRenderer.invoke('server-start'),
+  serverStop: () => ipcRenderer.invoke('server-stop'),
+  serverStatus: () => ipcRenderer.invoke('server-status'),
   print: (payload) => ipcRenderer.invoke('print', payload),
 });

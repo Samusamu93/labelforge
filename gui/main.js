@@ -13,6 +13,9 @@ const QRCode = require('qrcode');
 const bwipjs = require('bwip-js');
 const { buildLabel, extractPlaceholders } = require('../lib/render');
 const { sendNetwork, sendWindowsPrinterByName, sendUSBWindows, sendUSBUnix } = require('../lib/print');
+const { startServer } = require('../lib/server');
+
+let printServer = null; // istanza del print server HTTP (se attivo)
 
 // --- Cartelle template ---
 // I template "di fabbrica" sono in bundle (sola lettura in app impacchettate),
@@ -393,6 +396,43 @@ ipcMain.handle('diagnose', async (_e, connection) => {
   return { results };
 });
 
+// --- Print server HTTP (avviabile dalla GUI) ---
+function connectionFromSettings(s) {
+  const type = s.connType || 'printer';
+  if (type === 'printer') return { type: 'printer', printer: s.printer };
+  if (type === 'ip') return { type: 'ip', ip: s.ip, port: 9100 };
+  if (type === 'usb') return { type: 'usb', usb: s.usb };
+  return null;
+}
+function startPrintServer() {
+  const s = loadSettings();
+  const port = Number(s.serverPort) || 9110;
+  const token = s.serverToken || '';
+  try {
+    printServer = startServer({
+      port, host: '127.0.0.1', token: token || undefined,
+      resolveTemplate: (file) => loadTemplateRaw(file),
+      listTemplateNames: () => listTemplates().map((t) => t.file.replace(/\.json$/, '')),
+      defaults: { connection: connectionFromSettings(s) },
+    });
+    printServer.on('error', () => {}); // es. porta occupata
+    return { ok: true, running: true, port, url: `http://127.0.0.1:${port}` };
+  } catch (e) {
+    printServer = null;
+    return { ok: false, error: e.message };
+  }
+}
+function stopPrintServer() {
+  if (printServer) { try { printServer.close(); } catch (_) {} printServer = null; }
+  return { ok: true, running: false };
+}
+ipcMain.handle('server-start', () => startPrintServer());
+ipcMain.handle('server-stop', () => stopPrintServer());
+ipcMain.handle('server-status', () => {
+  const s = loadSettings();
+  return { running: !!printServer, port: Number(s.serverPort) || 9110, url: `http://127.0.0.1:${Number(s.serverPort) || 9110}` };
+});
+
 ipcMain.handle('get-settings', () => loadSettings());
 ipcMain.handle('save-settings', (_e, obj) => saveSettings(obj));
 ipcMain.handle('reset-settings', () => {
@@ -441,6 +481,7 @@ app.whenReady().then(() => {
   ensureUserDirs();
   createWindow();
   ensureDesktopShortcut();
+  if (loadSettings().serverEnabled) startPrintServer();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

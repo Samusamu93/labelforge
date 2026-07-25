@@ -40,6 +40,7 @@ Progetta le etichette visivamente, compila i campi (o scansionali) e stampa via 
 | 📄 **Stampa in blocco da CSV** | Importa un CSV e stampa una etichetta per riga (le colonne riempiono i `{{campi}}`). |
 | 🔁 **Condividi i template** | Esporta/importa i template come `.json`; testa la connessione alla stampante prima di stampare. |
 | 🕘 **Storico e scorciatoie** | Ristampa dallo storico, ricerca template, tema chiaro/scuro, undo/redo nell'editor e scorciatoie (Ctrl+P/S/F/Z/Y). |
+| 🔌 **Integrazione** | Stampa da altri programmi tramite print server HTTP o watch‑folder (deposita un job JSON). |
 | 🌍 **Interfaccia bilingue** | Inglese (predefinito) e Italiano, selezionabile nelle Impostazioni. |
 | 💾 **Ricorda tutto** | Stampante, ultimo template, tema, lingua e preferenze salvati tra un avvio e l'altro. |
 | 📦 **Distribuisci come app** | Pacchettizzazione in `.exe` Windows; collegamento sul Desktop creato automaticamente al primo avvio. |
@@ -97,6 +98,35 @@ git push origin v1.0.0
 I contributi sono benvenuti — vedi [CONTRIBUTING.md](CONTRIBUTING.md). Apri una issue (ci sono i
 modelli) prima di modifiche importanti. L'app impacchettata non è firmata, quindi Windows SmartScreen
 può avvisare al primo avvio; firma e auto‑aggiornamento sono opzionali.
+
+## 🔌 Integrazione (stampa da altri programmi)
+
+Altri programmi possono stampare tramite LabelForge senza la GUI:
+
+**Print server HTTP** — avvialo, poi qualsiasi programma (script, app web, altro PC) invia una POST:
+
+```bash
+node cli.js serve --port 9110 --printer "Zebra"     # oppure --ip 192.168.1.50
+```
+```bash
+curl -X POST http://localhost:9110/print -H "Content-Type: application/json" \
+  -d '{"template":"product-51x25","data":{"title":"Articolo","code":"12345"},"printer":"Zebra"}'
+```
+Endpoint: `GET /health`, `GET /templates`, `POST /print`. In blocco: invia `"rows":[{...},{...}]`.
+Autenticazione opzionale con `--token SEGRETO` (`Authorization: Bearer SEGRETO` o `X-Api-Key: SEGRETO`).
+La connessione si può indicare per richiesta (`printer`/`ip`/`usb`) o come default del server via flag CLI.
+
+**Watch folder** — deposita un file `.json` in una cartella e viene stampato in automatico:
+
+```bash
+node cli.js watch --dir ./inbox --printer "Zebra"
+```
+Ogni file tipo `{"template":"product-51x25","data":{...}}` viene stampato e spostato in `printed/`
+(o `errors/` in caso di errore). Ideale per gestionali che sanno solo scrivere file.
+
+**CLI diretta** — `node cli.js print --template ... --set campo=valore --printer "Zebra"` per stampe singole.
+
+📖 API completa e schema del job: **[docs/INTEGRATION.md](docs/INTEGRATION.md)**.
 
 ## 🖨️ Linguaggi stampante e compatibilità
 

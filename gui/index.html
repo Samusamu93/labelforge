@@ -384,6 +384,15 @@
         <select id="setStep"><option value="0.5">0.5</option><option value="1">1</option><option value="2">2</option><option value="5">5</option></select>
       </div>
 
+      <h3 data-i18n="set.server" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">Print server (integration)</h3>
+      <label class="checkbox"><input type="checkbox" id="srvEnable" /> <span data-i18n="set.serverEnable">Enable HTTP print server</span></label>
+      <div class="row" style="margin-top:6px;">
+        <div class="field"><label data-i18n="set.serverPort">Port</label><input type="number" id="srvPort" value="9110" min="1" max="65535" /></div>
+        <div class="field"><label data-i18n="set.serverToken">Token (optional)</label><input type="text" id="srvToken" placeholder="—" /></div>
+      </div>
+      <div id="srvStatus" style="font-size:12px; margin-top:4px; color:var(--muted);"></div>
+      <p class="mini" data-i18n="set.serverNote" style="color:var(--muted);margin:2px 0 0;">Other programs can print via POST http://localhost:&lt;port&gt;/print. Listens on localhost only.</p>
+
       <h3 data-i18n="set.general" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px;">General</h3>
       <div class="toolbar" style="margin:0;">
         <button class="ghost" id="openFolderBtn" data-i18n="set.openFolder">📁 Open templates folder</button>
